@@ -10,7 +10,7 @@ import os
 
 def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
     if not document_id or not user_id or not tag or not collection_name:
-        raise HTTPRequestException(message="Please provide all fields")
+        raise HTTPRequestException(message="Please fill all the required fields")
 
     document_path = os.path.join(DOCUMENT_DIR, collection_name, user_id, document_id + '.' + tag)
 
@@ -42,9 +42,23 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
     
     try:
         collection.insert(data=data_objects)
+
     except Exception as e:
         raise HTTPRequestException(message=str(e), status_code=500)
     
 
 def delete_doc(document_id:str, collection_name:str):
-    pass
+    if not document_id or not collection_name:
+        raise HTTPRequestException("Please fill all the required fields")
+    
+    if not check_collection_validation(collection_name):
+        raise HTTPRequestException("The provided collection doesn't exist")
+    
+    collection = Collection(collection_name)
+
+    # delete from the collection
+    try:
+        collection.delete(f"document_id == '{document_id}'")
+    
+    except Exception as e:
+        raise HTTPRequestException(message=str(e), status_code=500)
