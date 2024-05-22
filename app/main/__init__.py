@@ -17,8 +17,9 @@ def create_app(config_name:str):
 
     # register blueprints
     # routes need to be imported inside to avoid conflict
-    from .route import document_route
+    from .route import document_route, llm_route
     app.register_blueprint(document_route.blueprint)
+    app.register_blueprint(llm_route.blueprint)
 
     print(f"The app is running in {config_name} environment")
 

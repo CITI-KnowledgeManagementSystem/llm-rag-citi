@@ -11,7 +11,11 @@ class HTTPRequestException(Exception):
         self.payload = payload
 
     def to_dict(self):
-        error_dict = dict(self.payload or ())
+        error_dict = dict()
+
+        if self.payload:
+            error_dict['payload'] = self.payload
+
         error_dict['message'] = self.message
         return error_dict
 
@@ -31,9 +35,13 @@ class HTTPRequestSuccess:
         self.payload = payload
 
     def to_dict(self):
-        error_dict = dict(self.payload or ())
-        error_dict['message'] = self.message
-        return error_dict
+        success_dict = dict()
+
+        if self.payload:
+            success_dict['payload'] = self.payload
+
+        success_dict['message'] = self.message
+        return success_dict
 
     def to_response(self):
         response = jsonify(self.to_dict())
