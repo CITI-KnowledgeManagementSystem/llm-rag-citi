@@ -1,8 +1,22 @@
 import os
 
 LLM_URL = os.getenv('LLM_URL')
-PROMPT_TEMPLATE = f"""
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature. If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.
+PROMPT_TEMPLATE = """
+You are a helpful, respectful and honest assistant.
+Always answer a question based on the INSTRUCTION.
+
+INSTRUCTION: 
+Answer the QUESTION using the CONTEXT provided below. Prioritize answering the QUESTION based on the provided CONTEXT. If the QUESTION can't be answered using the CONTEXT, tell that in your answer and provide a factual answer. Use the HISTORY also to answer the QUESTION.
+
+CONTEXT:
+{context}
+
+HISTORY:
+{history}
+
+QUESTION:
+{question}
+
 """
 MODEL = "gpt-4"
 TEMPERATURE = 0

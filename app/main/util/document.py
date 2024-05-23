@@ -1,8 +1,8 @@
-from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP
-from pymilvus import utility
+from pymilvus import utility, Collection
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
 
+from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL
 from ...main import embedding_model
 
 
@@ -30,3 +30,10 @@ def read_file(file_path:str, tag:str):
 def split_documents(document_data):
     splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
     return splitter.split_documents(document_data)
+
+
+def retrieve_documents_from_vdb(embeddings, collection_name:str):
+    collection = Collection(collection_name)
+    params = { "metric_type": 'COSINE' }
+    res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, output_fields=["document_id", "content"])
+    return res
