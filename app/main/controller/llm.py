@@ -5,10 +5,11 @@ from ..response import HTTPRequestException, HTTPRequestSuccess
 def chat_with_llm():
     body = request.get_json()
     question = body.get('question')
+    collection_name = body.get('collection_name')
     conversation_history = body.get('conversation_history')
 
     try:
-        res = question_answer(question, conversation_history)
+        res = question_answer(question, collection_name, conversation_history)
         return HTTPRequestSuccess(message="Success", status_code=200, payload=res).to_response() 
 
     except HTTPRequestException as e:
