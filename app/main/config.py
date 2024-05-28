@@ -14,6 +14,8 @@ class DevelopmentConfig(Config):
     # using milvus database
     DEBUG = True
     MILVUS_URI = os.getenv('MILVUS_URI_DEV')
+    MILVUS_USER = os.getenv('MILVUS_USERNAME')
+    MILVUS_PASSWORD = os.getenv('MILVUS_PASSWORD')
 
 
 class TestingConfig(Config):
