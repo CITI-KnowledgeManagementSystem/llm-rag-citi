@@ -17,7 +17,8 @@ def create_app(config_name:str):
     connections.connect(
         uri=config_by_name[config_name].MILVUS_URI,
         user=config_by_name[config_name].MILVUS_USER,
-        password=config_by_name[config_name].MILVUS_PASSWORD
+        password=config_by_name[config_name].MILVUS_PASSWORD,
+        db_name=config_by_name[config_name].MILVUS_DB_NAME
     )
 
     # register blueprints

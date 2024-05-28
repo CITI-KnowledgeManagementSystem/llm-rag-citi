@@ -16,6 +16,7 @@ class DevelopmentConfig(Config):
     MILVUS_URI = os.getenv('MILVUS_URI_DEV')
     MILVUS_USER = os.getenv('MILVUS_USERNAME')
     MILVUS_PASSWORD = os.getenv('MILVUS_PASSWORD')
+    MILVUS_DB_NAME = os.getenv('MILVUS_DB_NAME')
 
 
 class TestingConfig(Config):
