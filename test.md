@@ -1,0 +1,1 @@
+The provided context does not contain any information about "her." As a factual answer, it seems that "her" is a reference to Taylor Swift mentioned in the previous user queries. In that case, Taylor Swift is an American singer-songwriter and actress known for her country and pop music. She has won numerous awards and is one of the world's best-selling music artists.
