@@ -13,7 +13,11 @@ def create_app(config_name:str):
     app.config.from_object(config_by_name[config_name])
 
     # connect to milvus
-    connections.connect(uri=config_by_name[config_name].MILVUS_URI)
+    connections.connect(
+        uri=config_by_name[config_name].MILVUS_URI,
+        user=config_by_name[config_name].MILVUS_USER,
+        password=config_by_name[config_name].MILVUS_PASSWORD
+    )
 
     # register blueprints
     # routes need to be imported inside to avoid conflict

@@ -10,7 +10,7 @@ DOCUMENT_READERS = {
     'txt': TextLoader,
     'md': UnstructuredMarkdownLoader
 }
-CHUNK_SIZE = 256
-CHUNK_OVERLAP = 0
+CHUNK_SIZE = 512
+CHUNK_OVERLAP = 20
 NUMBER_RETRIEVAL = 5
 

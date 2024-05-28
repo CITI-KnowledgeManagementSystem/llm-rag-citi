@@ -7,7 +7,7 @@ from ..constant.llm import PROMPT_TEMPLATE, MODEL, TEMPERATURE, MAX_TOKENS, IS_S
 dummy_history = []
 
 def question_answer(question:str, collection_name:str, conversations_history:list=None):
-    
+    global dummy_history
     if not question or not collection_name:
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
@@ -34,12 +34,14 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
     
         res = requests.post(LLM_URL, json=content_body).json()
         
-        dummy_history = dummy_history + [{
+        dummy_history = dummy_history + [
+            {
                 "role": "user", "content": question
             },
             {
                 "role": "assistant", "content": res['choices'][0]['message']['content']
-            }]
+            }
+        ]
 
         with open(r"C:\Users\CITI-AI\llm-rag-citi\test.md", 'w') as f:
             f.write(res['choices'][0]['message']['content'])
