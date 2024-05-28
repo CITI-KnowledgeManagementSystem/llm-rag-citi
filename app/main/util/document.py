@@ -19,7 +19,7 @@ def check_document_exists(document_path:str) -> bool:
 
 
 def document_to_embeddings(content:str) -> list:
-    return embedding_model.encode_documents(content)[0]
+    return embedding_model.encode(content)
 
 
 def read_file(file_path:str, tag:str):

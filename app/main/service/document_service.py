@@ -35,6 +35,7 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
         data = {
             "id": str(uuid4()),
             "vector": document_to_embeddings(doc.page_content),
+            "content": doc.page_content,
             "user_id": user_id,
             "document_id": document_id
         }
