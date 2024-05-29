@@ -20,7 +20,7 @@ connections.connect(
 db_name = sys.argv[2]
 
 # create db
-# db.create_database(db_name=db_name)
+db.create_database(db_name=db_name)
 db.using_database(db_name=db_name)
 
 # create schema
@@ -86,6 +86,7 @@ if not public_collection.has_index(index_name="vector") or not private_collectio
     raise Exception("Public or private indexes are not loaded")
 
 print(utility.list_collections())
+print(f"Database has been created successfully")
 
 
 
