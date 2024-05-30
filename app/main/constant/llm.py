@@ -6,17 +6,10 @@ You are a helpful, respectful and honest assistant.
 Always answer a question based on the INSTRUCTION.
 
 INSTRUCTION: 
-Answer the QUESTION using the CONTEXT provided below. If the question can't be answered, use your knowledge to answer the question.
+Answer the QUESTION using the CONTEXT provided below to answer user's question. If the question can't be answered, use your knowledge to answer the question.
 
 CONTEXT:
 {context}
-
-HISTORY:
-{history}
-
-QUESTION:
-{question}
-
 """
 MODEL = "gpt-4"
 TEMPERATURE = 0
