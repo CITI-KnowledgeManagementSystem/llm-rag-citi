@@ -2,6 +2,7 @@ import requests
 
 from ..response import HTTPRequestException
 from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
+from ..util.llm import format_conversation_history
 from ..constant.llm import PROMPT_TEMPLATE, MODEL, TEMPERATURE, MAX_TOKENS, IS_STREAM, LLM_URL
 
 
@@ -10,9 +11,8 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
     try:
-
         # add history handler
-        print(conversations_history)
+        formatted_history = format_conversation_history(conversations_history)
 
         # context retrieval
         question_embeddings = document_to_embeddings(question)
@@ -21,7 +21,12 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
         messages = [
             { 
                 "role": "system", 
-                "content": PROMPT_TEMPLATE.format(question=question, context=documents, history=conversations_history) 
+                "content": PROMPT_TEMPLATE.format(context=documents) 
+            }
+        ] + formatted_history + [
+            {
+                "role": "user",
+                "content": question
             }
         ]
         
