@@ -14,6 +14,7 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
     try:
 
         # add history handler
+         
 
         # context retrieval
         question_embeddings = document_to_embeddings(question)

@@ -4,9 +4,11 @@ from sentence_transformers import SentenceTransformer
 
 from .config import config_by_name
 from .constant.document import EMBEDDING_MODEL
+import torch
 
 
-embedding_model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True)
+print(torch.cuda.is_available())
+embedding_model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True, device='cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def create_app(config_name:str):
