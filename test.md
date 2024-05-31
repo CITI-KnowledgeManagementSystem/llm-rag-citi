@@ -1,1 +1,1 @@
-Based on the provided context, there is no information about a person named Taylor Swift or any of her ex-partners. Therefore, I am unable to answer the question using the given context. However, if you are referring to a different context or would like information about Taylor Swift's ex-partners, feel free to provide more details.
+Hello! How can I assist you today? If you have any questions, feel free to ask, and I'll do my best to help you.

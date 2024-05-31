@@ -2,28 +2,36 @@ import requests
 
 from ..response import HTTPRequestException
 from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
+from ..util.llm import format_conversation_history, get_context
 from ..constant.llm import PROMPT_TEMPLATE, MODEL, TEMPERATURE, MAX_TOKENS, IS_STREAM, LLM_URL
 
-dummy_history = []
 
-def question_answer(question:str, collection_name:str, conversations_history:list=None):
-    global dummy_history
+def question_answer(question:str, collection_name:str, conversations_history:list=""):
     if not question or not collection_name:
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
     try:
-
         # add history handler
-        
+        # formatted_history = format_conversation_history(conversations_history)
+        context = get_context(question)
+        print(context)
 
         # context retrieval
-        question_embeddings = document_to_embeddings(question)
+        question_embeddings = document_to_embeddings(context)
         documents = retrieve_documents_from_vdb(question_embeddings, collection_name)
+        print('documents', documents)
+
+        # rerank di sini
 
         messages = [
             { 
                 "role": "system", 
-                "content": PROMPT_TEMPLATE.format(question=question, context=documents, history=dummy_history) 
+                "content": PROMPT_TEMPLATE.format(context=documents) 
+            }
+        ] + [
+            {
+                "role": "user",
+                "content": question
             }
         ]
         
@@ -31,21 +39,11 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
             "model": MODEL,
             "messages": messages
         }
-
     
         res = requests.post(LLM_URL, json=content_body).json()
-        
-        dummy_history = dummy_history + [
-            {
-                "role": "user", "content": question
-            },
-            {
-                "role": "assistant", "content": res['choices'][0]['message']['content']
-            }
-        ]
 
-        with open(r"C:\Users\CITI-AI\llm-rag-citi\test.md", 'w') as f:
-            f.write(res['choices'][0]['message']['content'])
+        # with open(r"C:\Users\CITI-AI\llm-rag-citi\test.md", 'w') as f:
+        #     f.write(res['choices'][0]['message']['content'])
 
         return res['choices'][0]['message']['content']
     

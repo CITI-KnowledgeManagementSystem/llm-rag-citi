@@ -1,19 +1,20 @@
 from flask import Flask
+from flask_cors import CORS
 from pymilvus import connections
 from sentence_transformers import SentenceTransformer
+import torch
 
 from .config import config_by_name
 from .constant.document import EMBEDDING_MODEL
 import torch
 
-
-print(torch.cuda.is_available())
 embedding_model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True, device='cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def create_app(config_name:str):
     app = Flask(__name__)
     app.config.from_object(config_by_name[config_name])
+    CORS(app=app)
 
     # connect to milvus
     connections.connect(
