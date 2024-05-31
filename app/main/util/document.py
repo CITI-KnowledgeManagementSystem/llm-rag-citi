@@ -19,7 +19,7 @@ def check_document_exists(document_path:str) -> bool:
 
 
 def document_to_embeddings(content:str) -> list:
-    return embedding_model.encode(content)
+    return embedding_model.encode(content, show_progress_bar=True)
 
 
 def read_file(file_path:str, tag:str):
@@ -34,6 +34,6 @@ def split_documents(document_data):
 
 def retrieve_documents_from_vdb(embeddings, collection_name:str):
     collection = Collection(collection_name)
-    params = { "metric_type": 'COSINE' }
+    params = { "metric_type": 'IP' }
     res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, output_fields=["document_id", "content"])
     return res

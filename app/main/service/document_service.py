@@ -29,6 +29,8 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
     document_data = read_file(document_path, tag)
     splitted_document_data = split_documents(document_data)
 
+    print('sini')
+    
     # contain objects
     data_objects = []
     for doc in splitted_document_data:
@@ -40,6 +42,8 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
             "document_id": document_id
         }
         data_objects.append(data)
+    
+    print(data_objects)
     
     try:
         collection.insert(data=data_objects)
