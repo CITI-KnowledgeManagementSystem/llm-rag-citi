@@ -13,6 +13,8 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
     try:
         # add history handler
         # formatted_history = format_conversation_history(conversations_history)
+        
+        # getting context (hyde)
         context = get_context(question)
         print(context)
 
