@@ -22,10 +22,6 @@ def get_context(question:str):
     llm_chain = prompt | llm | StrOutputParser()
     
     context = llm_chain.invoke({'question':question})
-    # context = question
-
-    # print(type(prompt))
-    # prompt = prompt.invoke({'question':'Tell me the history of USA.', 'context':''})
     
     return context
 
