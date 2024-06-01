@@ -6,7 +6,7 @@ from ..util.llm import format_conversation_history, get_context
 from ..constant.llm import PROMPT_TEMPLATE, MODEL, TEMPERATURE, MAX_TOKENS, IS_STREAM, LLM_URL
 
 
-def question_answer(question:str, collection_name:str, conversations_history:list=""):
+def question_answer(question:str, collection_name:str, conversations_history:list="", hyde:bool=False, reranking:bool=False):
     if not question or not collection_name:
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
@@ -15,20 +15,32 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
         # formatted_history = format_conversation_history(conversations_history)
         
         # getting context (hyde)
+        if hyde == "True":
+            print('hyde')
         context = get_context(question)
         print(context)
+        print('sini')
+        
+        # reranking
+        if reranking == "True":
+            print('reranking')
 
         # context retrieval
         question_embeddings = document_to_embeddings(context)
-        documents = retrieve_documents_from_vdb(question_embeddings, collection_name)
-        print('documents', documents)
-
-        # rerank di sini
+        documents = retrieve_documents_from_vdb(question_embeddings, collection_name, reranking)
+        
+        # get content
+        content = []
+        for hits in documents:
+            for hit in hits:
+                content.append(hit.get('content'))
+        print(content)
+        
 
         messages = [
             { 
                 "role": "system", 
-                "content": PROMPT_TEMPLATE.format(context=documents) 
+                "content": PROMPT_TEMPLATE.format(context=content) 
             }
         ] + [
             {
