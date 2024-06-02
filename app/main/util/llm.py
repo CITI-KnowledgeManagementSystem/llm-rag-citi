@@ -1,6 +1,6 @@
 from langchain.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
+from ...main import llm
 
 def get_context(question:str):
     prompt_template = """
@@ -11,13 +11,6 @@ def get_context(question:str):
     """
             
     prompt = PromptTemplate(input_variables=["question"], template=prompt_template)
-
-    llm = ChatOpenAI(
-        openai_api_base = "http://140.118.101.189:8080/v1",
-        model_name = "gpt-4",
-        n=3,
-        temperature=1,
-    )
 
     llm_chain = prompt | llm | StrOutputParser()
     

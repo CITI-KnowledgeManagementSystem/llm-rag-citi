@@ -10,22 +10,19 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
     if not question or not collection_name:
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
+    print('question', question)
+    
     try:
         # add history handler
-        # formatted_history = format_conversation_history(conversations_history)
+        formatted_history = format_conversation_history(conversations_history)
         
         # getting context (hyde)
         if hyde == "True":
-            print('hyde')
-        context = get_context(question)
-        print(context)
-        print('sini')
-        
-        # reranking
-        if reranking == "True":
-            print('reranking')
+            context = get_context(question)
+        else:
+            context = question
 
-        # context retrieval
+        # context retrieval with reranking option
         question_embeddings = document_to_embeddings(context)
         documents = retrieve_documents_from_vdb(question_embeddings, collection_name, reranking)
         
@@ -34,7 +31,6 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
         for hits in documents:
             for hit in hits:
                 content.append(hit.get('content'))
-        print(content)
         
 
         messages = [
@@ -42,7 +38,7 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
                 "role": "system", 
                 "content": PROMPT_TEMPLATE.format(context=content) 
             }
-        ] + [
+        ] + formatted_history + [
             {
                 "role": "user",
                 "content": question
