@@ -7,7 +7,7 @@ import torch
 
 from .config import config_by_name
 from .constant.document import EMBEDDING_MODEL
-from .constant.llm import TEMPERATURE, MODEL, N_HYDE_INSTANCE, HYDE_LLM_URL
+from .constant.llm import TEMPERATURE, MODEL, N_HYDE_INSTANCE, HYDE_LLM_URL, LLM_URL
 
 embedding_model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True, device='cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -16,6 +16,13 @@ hyde_llm = ChatOpenAI(
     model_name = MODEL,
     n=N_HYDE_INSTANCE,
     temperature=TEMPERATURE,
+)
+
+generation_llm = ChatOpenAI(
+    openai_api_base = LLM_URL,
+    model_name=MODEL,
+    temperature=TEMPERATURE,
+    openai_api_key="None"
 )
 
 def create_app(config_name:str):
