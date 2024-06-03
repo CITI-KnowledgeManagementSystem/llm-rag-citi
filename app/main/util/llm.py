@@ -2,7 +2,7 @@ from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from ...main import llm
 
-def get_context(question:str):
+async def get_context(question:str):
     prompt_template = """
     You are a helpful AI assistant. Please give context to the user's question based on your knowledge.
     The response should be an explanation of the user's question, not the answer of the question.
@@ -14,7 +14,7 @@ def get_context(question:str):
 
     llm_chain = prompt | llm | StrOutputParser()
     
-    context = llm_chain.invoke({'question':question})
+    context = await llm_chain.ainvoke({'question':question})
     
     return context
 
