@@ -6,13 +6,13 @@ from ..util.llm import format_conversation_history
 from ..constant.llm import PROMPT_TEMPLATE, MODEL, TEMPERATURE, MAX_TOKENS, IS_STREAM, LLM_URL
 
 
-def question_answer(question:str, collection_name:str, conversations_history:list=""):
+def question_answer(question:str, collection_name:str, conversations_history:list):
     if not question or not collection_name:
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
     try:
         # add history handler
-        formatted_history = format_conversation_history(conversations_history)
+        formatted_history = format_conversation_history(conversations_history if conversations_history else [])
 
         # context retrieval
         question_embeddings = document_to_embeddings(question)
@@ -38,11 +38,9 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
     
         res = requests.post(LLM_URL, json=content_body).json()
 
-        with open(r"C:\Users\CITI-AI\llm-rag-citi\test.md", 'w') as f:
-            f.write(res['choices'][0]['message']['content'])
-
         return res['choices'][0]['message']['content']
     
     except Exception as e:
+        print(e)
         raise HTTPRequestException(message=str(e), status_code=500)
 
