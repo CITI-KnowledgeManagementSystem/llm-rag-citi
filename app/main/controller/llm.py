@@ -9,8 +9,6 @@ async def chat_with_llm():
     conversation_history = body.get('conversation_history')
     hyde = body.get('hyde')
     reranking = body.get('reranking')
-    
-    print(hyde, reranking)
 
     try:
         res = await question_answer(question, collection_name, conversation_history, hyde, reranking)
