@@ -1,6 +1,7 @@
 from pymilvus import utility, Collection
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
+from pymilvus import WeightedRanker, AnnSearchRequest
 
 from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL
 from ...main import embedding_model
@@ -19,7 +20,7 @@ def check_document_exists(document_path:str) -> bool:
 
 
 def document_to_embeddings(content:str) -> list:
-    return embedding_model.encode(content)
+    return embedding_model.encode(content, show_progress_bar=True)
 
 
 def read_file(file_path:str, tag:str):
@@ -32,8 +33,43 @@ def split_documents(document_data):
     return splitter.split_documents(document_data)
 
 
-def retrieve_documents_from_vdb(embeddings, collection_name:str):
+def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False):
     collection = Collection(collection_name)
-    params = { "metric_type": 'COSINE' }
-    res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, output_fields=["document_id", "content"])
+    params = { "metric_type": 'IP' }
+    if reranking == "True":
+        searchreq1 = {
+            "data": [embeddings],
+            "anns_field": "vector",
+            "limit" : NUMBER_RETRIEVAL,
+            "param": {
+                "metric_type": 'IP'
+            }, 
+        }
+        # searchreq2 = {
+        #     "data": [embeddings],
+        #     "anns_field": "vector",
+        #     "limit" : NUMBER_RETRIEVAL,
+        #     "param": {
+        #         "metric_type": 'COSINE'
+        #     }, 
+        # }
+        # searchreq3 = {
+        #     "data": [embeddings],
+        #     "anns_field": "vector",
+        #     "limit" : NUMBER_RETRIEVAL,
+        #     "param": {
+        #         "metric_type": 'L2'
+        #     }, 
+        # }
+        req1 = AnnSearchRequest(**searchreq1)
+        # req2 = AnnSearchRequest(**searchreq2)
+        # req3 = AnnSearchRequest(**searchreq3)
+        res = collection.hybrid_search(
+            reqs=[req1],
+            rerank=WeightedRanker(1),
+            limit = NUMBER_RETRIEVAL,
+            output_fields=["document_id", "content"]
+        )
+    else :
+        res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, output_fields=["document_id", "content"])
     return res

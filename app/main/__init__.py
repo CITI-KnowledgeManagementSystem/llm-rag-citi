@@ -1,15 +1,22 @@
 from flask import Flask
 from flask_cors import CORS
 from pymilvus import connections
+from langchain_openai import ChatOpenAI
 from sentence_transformers import SentenceTransformer
 import torch
 
 from .config import config_by_name
 from .constant.document import EMBEDDING_MODEL
-
+import torch
 
 embedding_model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True, device='cuda' if torch.cuda.is_available() else 'cpu')
 
+llm = ChatOpenAI(
+    openai_api_base = "http://140.118.101.189:8080/v1",
+    model_name = "gpt-4",
+    n=3,
+    temperature=1,
+)
 
 def create_app(config_name:str):
     app = Flask(__name__)
