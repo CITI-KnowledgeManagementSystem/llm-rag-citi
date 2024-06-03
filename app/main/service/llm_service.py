@@ -6,15 +6,13 @@ from ..util.llm import format_conversation_history, get_context
 from ..constant.llm import PROMPT_TEMPLATE, MODEL, TEMPERATURE, MAX_TOKENS, IS_STREAM, LLM_URL
 
 
-def question_answer(question:str, collection_name:str, conversations_history:list="", hyde:bool=False, reranking:bool=False):
+def question_answer(question:str, collection_name:str, conversations_history:list, hyde:bool=False, reranking:bool=False):
     if not question or not collection_name:
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
-    print('question', question)
-    
     try:
         # add history handler
-        formatted_history = format_conversation_history(conversations_history)
+        formatted_history = format_conversation_history(conversations_history if conversations_history else [])
         
         # getting context (hyde)
         if hyde == "True":
@@ -26,12 +24,10 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
         question_embeddings = document_to_embeddings(context)
         documents = retrieve_documents_from_vdb(question_embeddings, collection_name, reranking)
         
-        # get content
+        # get content from each doc
         content = []
-        for hits in documents:
-            for hit in hits:
-                content.append(hit.get('content'))
-        
+        for doc in documents:
+            content.append(doc.get('content'))
 
         messages = [
             { 
@@ -52,11 +48,9 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
     
         res = requests.post(LLM_URL, json=content_body).json()
 
-        # with open(r"C:\Users\CITI-AI\llm-rag-citi\test.md", 'w') as f:
-        #     f.write(res['choices'][0]['message']['content'])
-
         return res['choices'][0]['message']['content']
     
     except Exception as e:
+        print(e)
         raise HTTPRequestException(message=str(e), status_code=500)
 
