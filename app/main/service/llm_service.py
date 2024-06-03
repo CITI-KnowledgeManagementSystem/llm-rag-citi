@@ -1,3 +1,4 @@
+import asyncio
 import requests
 
 from ..response import HTTPRequestException
@@ -46,7 +47,8 @@ async def question_answer(question:str, collection_name:str, conversations_histo
             "messages": messages
         }
     
-        res = requests.post(LLM_URL, json=content_body).json()
+        res = await asyncio.to_thread(requests.post(LLM_URL, json=content_body))
+        res = res.json()
 
         return res['choices'][0]['message']['content']
     
