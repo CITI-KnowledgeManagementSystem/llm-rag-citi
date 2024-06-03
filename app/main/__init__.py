@@ -16,7 +16,6 @@ hyde_llm = ChatOpenAI(
     model_name = MODEL,
     n=N_HYDE_INSTANCE,
     temperature=TEMPERATURE,
-    openai_api_key="None"
 )
 
 def create_app(config_name:str):

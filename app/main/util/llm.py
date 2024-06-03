@@ -4,13 +4,13 @@ from langchain_core.output_parsers import StrOutputParser
 from ...main import hyde_llm
 from ..constant.llm import HYDE_PROMPT_TEMPLATE
 
-def get_context(question:str):
+async def get_context(question:str):
     prompt_template = HYDE_PROMPT_TEMPLATE    
     prompt = PromptTemplate(input_variables=["question"], template=prompt_template)
 
     llm_chain = prompt | hyde_llm | StrOutputParser()
     
-    context = llm_chain.invoke({'question':question})
+    context = await llm_chain.ainvoke({'question':question})
     
     return context
 

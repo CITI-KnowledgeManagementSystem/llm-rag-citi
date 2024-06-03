@@ -20,7 +20,7 @@ def check_document_exists(document_path:str) -> bool:
 
 
 def document_to_embeddings(content:str) -> list:
-    return embedding_model.encode(content)
+    return embedding_model.encode(content, show_progress_bar=True)
 
 
 def read_file(file_path:str, tag:str):
@@ -35,7 +35,7 @@ def split_documents(document_data):
 
 def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False):
     collection = Collection(collection_name)
-    params = { "metric_type": 'COSINE' }
+    params = { "metric_type": 'IP' }
 
     if reranking == "True":
         searchreq1 = {
@@ -43,7 +43,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             "anns_field": "vector",
             "limit" : NUMBER_RETRIEVAL,
             "param": {
-                "metric_type": 'COSINE'
+                "metric_type": 'IP'
             }, 
         }
 
