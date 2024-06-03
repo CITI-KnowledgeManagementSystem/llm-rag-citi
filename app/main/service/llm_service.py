@@ -1,12 +1,11 @@
-import requests
-
 from ..response import HTTPRequestException
+from ...main import generation_llm
 from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
 from ..util.llm import format_conversation_history, get_context
-from ..constant.llm import PROMPT_TEMPLATE, MODEL, TEMPERATURE, MAX_TOKENS, IS_STREAM, LLM_URL
+from ..constant.llm import PROMPT_TEMPLATE
 
 
-def question_answer(question:str, collection_name:str, conversations_history:list, hyde:bool=False, reranking:bool=False):
+async def question_answer(question:str, collection_name:str, conversations_history:list, hyde:bool=False, reranking:bool=False):
     if not question or not collection_name:
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
@@ -16,9 +15,10 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
         
         # getting context (hyde)
         if hyde == "True":
-            context = get_context(question)
+            context = await get_context(question)
         else:
             context = question
+
 
         # context retrieval with reranking option
         question_embeddings = document_to_embeddings(context)
@@ -40,15 +40,10 @@ def question_answer(question:str, collection_name:str, conversations_history:lis
                 "content": question
             }
         ]
-        
-        content_body = {
-            "model": MODEL,
-            "messages": messages
-        }
     
-        res = requests.post(LLM_URL, json=content_body).json()
+        res = await generation_llm.ainvoke(messages)
 
-        return res['choices'][0]['message']['content']
+        return res.content
     
     except Exception as e:
         print(e)
