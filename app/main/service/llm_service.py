@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import asyncio
-import requests
-
-=======
->>>>>>> c55edc0ef8d89d82d7707cf9c10d11433a2d80a0
 from ..response import HTTPRequestException
 from ...main import generation_llm
 from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
@@ -47,12 +41,7 @@ async def question_answer(question:str, collection_name:str, conversations_histo
             }
         ]
     
-<<<<<<< HEAD
-        res = await asyncio.to_thread(requests.post(LLM_URL, json=content_body))
-        res = res.json()
-=======
         res = await generation_llm.ainvoke(messages)
->>>>>>> c55edc0ef8d89d82d7707cf9c10d11433a2d80a0
 
         return res.content
     
