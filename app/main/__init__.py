@@ -11,6 +11,8 @@ from .constant.llm import TEMPERATURE, MODEL, N_HYDE_INSTANCE, HYDE_LLM_URL, LLM
 
 embedding_model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True, device='cuda' if torch.cuda.is_available() else 'cpu')
 
+task = []
+
 hyde_llm = ChatOpenAI(
     openai_api_base = HYDE_LLM_URL,
     model_name = MODEL,

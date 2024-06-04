@@ -14,12 +14,13 @@ Always answer a question based on the INSTRUCTION.
 
 INSTRUCTION: 
 Answer the QUESTION using the CONTEXT provided below to answer user's question. If the question can't be answered, use your knowledge to answer the question.
+You don't have to explain everything if there is an option to answer the question directly.
 
 CONTEXT:
 {context}
 """
 MODEL = "gpt-4"
 N_HYDE_INSTANCE = 1
-TEMPERATURE = 1
+TEMPERATURE = 0
 IS_STREAM = False
 MAX_TOKENS = -1
