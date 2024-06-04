@@ -1,13 +1,17 @@
+<<<<<<< HEAD
 import asyncio
 import requests
 
+=======
+>>>>>>> c55edc0ef8d89d82d7707cf9c10d11433a2d80a0
 from ..response import HTTPRequestException
+from ...main import generation_llm
 from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
 from ..util.llm import format_conversation_history, get_context
-from ..constant.llm import PROMPT_TEMPLATE, MODEL, TEMPERATURE, MAX_TOKENS, IS_STREAM, LLM_URL
+from ..constant.llm import PROMPT_TEMPLATE
 
 
-async def question_answer(question:str, collection_name:str, conversations_history:list="", hyde:bool=False, reranking:bool=False):
+async def question_answer(question:str, collection_name:str, conversations_history:list, hyde:bool=False, reranking:bool=False):
     if not question or not collection_name:
         raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
     
@@ -20,6 +24,7 @@ async def question_answer(question:str, collection_name:str, conversations_histo
             context = await get_context(question)
         else:
             context = question
+
 
         # context retrieval with reranking option
         question_embeddings = document_to_embeddings(context)
@@ -41,16 +46,15 @@ async def question_answer(question:str, collection_name:str, conversations_histo
                 "content": question
             }
         ]
-        
-        content_body = {
-            "model": MODEL,
-            "messages": messages
-        }
     
+<<<<<<< HEAD
         res = await asyncio.to_thread(requests.post(LLM_URL, json=content_body))
         res = res.json()
+=======
+        res = await generation_llm.ainvoke(messages)
+>>>>>>> c55edc0ef8d89d82d7707cf9c10d11433a2d80a0
 
-        return res['choices'][0]['message']['content']
+        return res.content
     
     except Exception as e:
         print(e)
