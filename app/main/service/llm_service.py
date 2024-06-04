@@ -18,7 +18,8 @@ async def question_answer(question:str, collection_name:str, conversations_histo
             context = await get_context(question)
         else:
             context = question
-
+            
+        print(context)
 
         # context retrieval with reranking option
         question_embeddings = document_to_embeddings(context)
