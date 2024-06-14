@@ -2,9 +2,11 @@ from pymilvus import utility, Collection
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
 from pymilvus import WeightedRanker, AnnSearchRequest
+import paramiko
 
-from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL
+from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL, DOCUMENT_DIR
 from ...main import embedding_model
+from ..response import HTTPRequestException
 
 
 def check_document_validation(tag:str) -> bool:
@@ -37,11 +39,11 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
     collection = Collection(collection_name)
     params = { "metric_type": 'IP' }
 
-    if reranking == "True":
+    if reranking == True:
         searchreq1 = {
             "data": [embeddings],
             "anns_field": "vector",
-            "limit" : NUMBER_RETRIEVAL,
+            "limit" : NUMBER_RETRIEVAL*2,
             "param": {
                 "metric_type": 'IP'
             }, 
@@ -60,3 +62,41 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
         res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, output_fields=["document_id", "content"])
 
     return res[0]
+
+def create_sftp_client():
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    return client
+
+def retrieve_documents_from_sftp(user_id:str, document_id:str, tag:str, collection_name:str):
+    sftp_client = create_sftp_client()
+    print(os.getenv('QNAP_SFTP_IP'), os.getenv('QNAP_SFTP_PORT'), os.getenv('QNAP_SFTP_USERNAME'), os.getenv('QNAP_SFTP_PASSWORD'))
+    try:
+        sftp_client.connect(
+            hostname=os.getenv('QNAP_SFTP_IP'),
+            port=int(os.getenv('QNAP_SFTP_PORT')),
+            username=os.getenv('QNAP_SFTP_USERNAME'),
+            password=os.getenv('QNAP_SFTP_PASSWORD')
+        )
+    except Exception as e:
+        print(e)
+        raise HTTPRequestException(message="Failed to connect to the server", status_code=500)
+
+    document_path = os.path.join(DOCUMENT_DIR, collection_name, user_id, document_id + '.' + tag)
+
+    try:
+        with sftp_client.open_sftp() as sftp_client:
+            if collection_name == 'private':
+                sftp_client.get(
+                    remotepath=f"{os.getenv('QNAP_SFTP_PRIVATE_DIR')}/{user_id}/{document_id}.{tag}",
+                    localpath=document_path
+                )
+            else :
+                sftp_client.get(
+                    remotepath=os.getenv('QNAP_SFTP_PUBLIC_DIR') + '/' + document_id + '.' + tag,
+                    localpath=document_path
+                )
+    except Exception as e:
+        print(e)
+        raise HTTPRequestException(message="Failed to retrieve the document", status_code=500)
+

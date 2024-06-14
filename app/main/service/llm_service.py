@@ -14,12 +14,12 @@ async def question_answer(question:str, collection_name:str, conversations_histo
         formatted_history = format_conversation_history(conversations_history if conversations_history else [])
         
         # getting context (hyde)
-        if hyde == "True":
+        if hyde == True:
             context = await get_context(question)
         else:
             context = question
             
-        print(context)
+        print('context', context)
 
         # context retrieval with reranking option
         question_embeddings = document_to_embeddings(context)
@@ -29,6 +29,7 @@ async def question_answer(question:str, collection_name:str, conversations_histo
         content = []
         for doc in documents:
             content.append(doc.get('content'))
+        print('content', content)
 
         messages = [
             { 
