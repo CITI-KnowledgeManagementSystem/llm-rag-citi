@@ -20,16 +20,19 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
     if not check_document_validation(tag):
         raise HTTPRequestException(message="The provided document is not valid")
     
-    if not check_document_exists(document_path):
-        raise HTTPRequestException(message="The document doesn't exist")
-    
     collection = Collection(collection_name)
+    
+    # retrieve the document from sftp   
+    retrieve_documents_from_sftp(
+        user_id=user_id,
+        document_id=document_id,
+        tag=tag,
+        collection_name=collection_name,
+    )          
 
     # read the file
     document_data = read_file(document_path, tag)
     splitted_document_data = split_documents(document_data)
-
-    print('sini')
     
     # contain objects
     data_objects = []
@@ -51,6 +54,9 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
     except Exception as e:
         raise HTTPRequestException(message=str(e), status_code=500)
     
+    os.remove(document_path)
+    
+    
 
 def delete_doc(document_id:str, collection_name:str):
     if not document_id or not collection_name:
@@ -67,3 +73,30 @@ def delete_doc(document_id:str, collection_name:str):
     
     except Exception as e:
         raise HTTPRequestException(message=str(e), status_code=500)
+    
+def check_doc(document_id:str, collection_name:str, user_id:str):
+    if not document_id:
+        raise HTTPRequestException("Please fill the document_id field")
+    
+    if not user_id:
+        raise HTTPRequestException("Please fill the user_id field")
+    
+    if not collection_name:
+        raise HTTPRequestException("Please fill the collection_name field")
+    
+    if not check_collection_validation(collection_name):
+        raise HTTPRequestException("The provided collection doesn't exist")
+    
+    collection = Collection(collection_name)
+
+    # check from the collection
+    try:
+        res = collection.query(
+            expr=f"document_id == '{document_id}' && user_id == '{user_id}'",
+            limit=1
+        )
+        if not res:
+            raise HTTPRequestException("The document doesn't exist", status_code=404)
+    
+    except Exception as e:
+        raise HTTPRequestException("The document doesn't exist", status_code=404)

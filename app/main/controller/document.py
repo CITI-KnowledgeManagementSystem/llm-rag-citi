@@ -1,5 +1,5 @@
 from flask import request
-from ..service.document_service import insert_doc, delete_doc
+from ..service.document_service import insert_doc, delete_doc, check_doc
 from ..response import HTTPRequestException, HTTPRequestSuccess
 
 
@@ -31,6 +31,22 @@ def delete_document_from_vdb():
     except HTTPRequestException as e:
         print(e.message)
         return e.to_response()
+    
+def check_document_exist_in_vdb():
+    args = request.args
+    document_id = args.get('document_id')
+    collection_name = args.get('collection_name')
+    user_id = args.get('user_id')
+    
+    try:
+        check_doc(document_id, collection_name, user_id)
+        return HTTPRequestSuccess(message="Document exists", status_code=200).to_response()
+    
+    except HTTPRequestException as e:
+        print(e.message)
+        return e.to_response()
+    
+
         
 
     
