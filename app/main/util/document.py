@@ -37,7 +37,7 @@ def split_documents(document_data):
 
 def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None):
     collection = Collection(collection_name)
-    params = { "metric_type": 'IP' }
+    params = { "metric_type": 'COSINE' }
 
     if reranking == True:
         searchreq1 = {

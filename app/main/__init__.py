@@ -17,8 +17,8 @@ hyde_llm = ChatOpenAI(
     openai_api_base = HYDE_LLM_URL,
     model_name = MODEL,
     n=N_HYDE_INSTANCE,
-    temperature=1,
-    max_tokens=MAX_TOKENS/(2.5),
+    temperature=TEMPERATURE,
+    openai_api_key="None"
 )
 
 semaphore = threading.Semaphore(2)
