@@ -12,7 +12,7 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
     if not document_id or not user_id or not tag or not collection_name:
         raise HTTPRequestException(message="Please fill all the required fields")
 
-    document_path = os.path.join(DOCUMENT_DIR, collection_name, user_id, document_id + '.' + tag)
+    document_path = os.path.join(DOCUMENT_DIR, collection_name, document_id + '.' + tag)
 
     if not check_collection_validation(collection_name):
         raise HTTPRequestException(message="The provided collection doesn't exist")
@@ -45,8 +45,6 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
             "document_id": document_id
         }
         data_objects.append(data)
-    
-    print(data_objects)
     
     try:
         collection.insert(data=data_objects)

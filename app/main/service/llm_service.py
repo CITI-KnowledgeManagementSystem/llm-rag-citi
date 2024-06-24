@@ -12,7 +12,6 @@ async def question_answer(question:str, collection_name:str, conversations_histo
     try:
         # add history handler
         formatted_history = format_conversation_history(conversations_history if conversations_history else [])
-        
         # getting context (hyde)
         if hyde == True:
             context = await get_context(question)
