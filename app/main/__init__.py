@@ -4,10 +4,12 @@ from pymilvus import connections
 from langchain_openai import ChatOpenAI
 from sentence_transformers import SentenceTransformer
 import torch
+import threading
+
 
 from .config import config_by_name
 from .constant.document import EMBEDDING_MODEL
-from .constant.llm import TEMPERATURE, MODEL, N_HYDE_INSTANCE, HYDE_LLM_URL, LLM_URL
+from .constant.llm import TEMPERATURE, MODEL, N_HYDE_INSTANCE, HYDE_LLM_URL, LLM_URL, MAX_TOKENS
 
 embedding_model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True, device='cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -18,13 +20,18 @@ hyde_llm = ChatOpenAI(
     model_name = MODEL,
     n=N_HYDE_INSTANCE,
     temperature=TEMPERATURE,
+    max_tokens=MAX_TOKENS,
 )
+
+semaphore = threading.Semaphore(2)
+
 
 generation_llm = ChatOpenAI(
     openai_api_base = LLM_URL,
     model_name=MODEL,
     temperature=TEMPERATURE,
-    openai_api_key="None"
+    openai_api_key="None",
+    max_tokens=MAX_TOKENS,
 )
 
 def create_app(config_name:str):

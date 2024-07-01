@@ -20,6 +20,7 @@ def insert_document_to_vdb():
     
 
 def delete_document_from_vdb():
+    print('delete')
     args = request.args
     document_id = args.get('document_id')
     collection_name = args.get('collection_name')
