@@ -23,12 +23,11 @@ async def question_answer(question:str, collection_name:str, conversations_histo
         # context retrieval with reranking option
         question_embeddings = document_to_embeddings(context)
         documents = retrieve_documents_from_vdb(question_embeddings, collection_name, reranking)
-        
         # get content from each doc
         content = []
         for doc in documents:
             content.append(doc.get('content'))
-        print('content', content)
+        # print('content', content)
 
         messages = [
             { 
