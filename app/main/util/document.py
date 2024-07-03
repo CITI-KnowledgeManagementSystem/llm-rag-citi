@@ -35,7 +35,7 @@ def split_documents(document_data):
     return splitter.split_documents(document_data)
 
 
-def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False):
+def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None):
     collection = Collection(collection_name)
     params = { "metric_type": 'IP' }
 
@@ -47,19 +47,31 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             "param": {
                 "metric_type": 'IP'
             }, 
+            "expr" : f"user_id == '{user_id}'"
         }
 
         req1 = AnnSearchRequest(**searchreq1)
 
-        res = collection.hybrid_search(
-            reqs=[req1],
-            rerank=WeightedRanker(1),
-            limit = NUMBER_RETRIEVAL,
-            output_fields=["document_id", "content"]
-        )
+        if collection_name == 'private' : 
+            res = collection.hybrid_search(
+                reqs=[req1],
+                rerank=WeightedRanker(1),
+                limit = NUMBER_RETRIEVAL,
+                output_fields=["document_id", "content"]
+            )
+        else : 
+            res = collection.hybrid_search(
+                reqs=[req1],
+                rerank=WeightedRanker(1),
+                limit = NUMBER_RETRIEVAL,
+                output_fields=["document_id", "content"]
+            )
 
     else :
-        res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, output_fields=["document_id", "content"])
+        if collection_name == 'private':
+            res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, expr=f"user_id == '{user_id}'", output_fields=["document_id", "content"])
+        else:
+            res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, output_fields=["document_id", "content"])
 
     return res[0]
 

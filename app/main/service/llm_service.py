@@ -5,9 +5,10 @@ from ..util.llm import format_conversation_history, get_context
 from ..constant.llm import PROMPT_TEMPLATE
 
 
-async def question_answer(question:str, collection_name:str, conversations_history:list, hyde:bool=False, reranking:bool=False):
-    if not question or not collection_name:
-        raise HTTPRequestException(message="Please provide both question and collection name", status_code=400)
+async def question_answer(question:str, user_id:str, conversations_history:list, hyde:bool=False, reranking:bool=False,):
+    print(user_id)
+    if not question or not user_id:
+        raise HTTPRequestException(message="Please provide both question & user_id", status_code=400)
     
     try:
         # add history handler
@@ -22,10 +23,22 @@ async def question_answer(question:str, collection_name:str, conversations_histo
 
         # context retrieval with reranking option
         question_embeddings = document_to_embeddings(context)
-        documents = retrieve_documents_from_vdb(question_embeddings, collection_name, reranking)
+        private_documents = retrieve_documents_from_vdb(
+                                embeddings=question_embeddings, 
+                                user_id=user_id, 
+                                collection_name='private', 
+                                reranking=reranking
+                            )
+        public_documents = retrieve_documents_from_vdb(
+                                embeddings=question_embeddings, 
+                                collection_name='public', 
+                                reranking=reranking
+                            )
         # get content from each doc
         content = []
-        for doc in documents:
+        for doc in private_documents:
+            content.append(doc.get('content')                           )
+        for doc in public_documents:
             content.append(doc.get('content'))
         # print('content', content)
 
