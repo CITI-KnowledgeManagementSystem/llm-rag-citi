@@ -82,7 +82,7 @@ def create_sftp_client():
 
 def retrieve_documents_from_sftp(user_id:str, document_id:str, tag:str, collection_name:str):
     sftp_client = create_sftp_client()
-    print(os.getenv('QNAP_SFTP_IP'), os.getenv('QNAP_SFTP_PORT'), os.getenv('QNAP_SFTP_USERNAME'), os.getenv('QNAP_SFTP_PASSWORD'))
+    
     try:
         sftp_client.connect(
             hostname=os.getenv('QNAP_SFTP_IP'),
@@ -94,7 +94,7 @@ def retrieve_documents_from_sftp(user_id:str, document_id:str, tag:str, collecti
         print(e)
         raise HTTPRequestException(message="Failed to connect to the server", status_code=500)
 
-    document_path = os.path.join(DOCUMENT_DIR, collection_name, document_id + '.' + tag)
+    document_path = os.path.join(DOCUMENT_DIR, document_id + '.' + tag)
 
     try:
         with sftp_client.open_sftp() as sftp_client:
