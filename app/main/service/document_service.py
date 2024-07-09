@@ -20,19 +20,28 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, chang
     if not check_document_validation(tag):
         raise HTTPRequestException(message="The provided document is not valid")
     
-    collection_name = collection_name if change==False else "public" if collection_name=="private" else "private"
+    print(document_id, user_id, tag, collection_name, document_path, change)
     
-    collection = Collection(collection_name)
-    
-    print(document_id, user_id, tag, collection_name, document_path)
-    
-    # retrieve the document from sftp   
     retrieve_documents_from_sftp(
         user_id=user_id,
         document_id=document_id,
         tag=tag,
-        collection_name="private",
-    )          
+        collection_name=collection_name,
+    )
+    
+    if (change):
+        move_documents_from(
+            user_id=user_id,
+            document_id=document_id,
+            tag=tag,
+            collection_name=collection_name,
+        )
+    
+    collection_name = collection_name if change==False else "public" if collection_name=="private" else "private"
+    
+    collection = Collection(collection_name)
+    
+    # retrieve the document from sftp             
 
     # read the file
     document_data = read_file(document_path, tag)
