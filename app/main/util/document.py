@@ -45,7 +45,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             "anns_field": "vector",
             "limit" : NUMBER_RETRIEVAL*2,
             "param": {
-                "metric_type": 'IP'
+                "metric_type": 'COSINE'
             }, 
             "expr" : f"user_id == '{user_id}'"
         }
@@ -82,7 +82,7 @@ def create_sftp_client():
 
 def retrieve_documents_from_sftp(user_id:str, document_id:str, tag:str, collection_name:str):
     sftp_client = create_sftp_client()
-    print(os.getenv('QNAP_SFTP_IP'), os.getenv('QNAP_SFTP_PORT'), os.getenv('QNAP_SFTP_USERNAME'), os.getenv('QNAP_SFTP_PASSWORD'))
+    print('ngambil docs');
     try:
         sftp_client.connect(
             hostname=os.getenv('QNAP_SFTP_IP'),
@@ -94,7 +94,9 @@ def retrieve_documents_from_sftp(user_id:str, document_id:str, tag:str, collecti
         print(e)
         raise HTTPRequestException(message="Failed to connect to the server", status_code=500)
 
-    document_path = os.path.join(DOCUMENT_DIR, collection_name, document_id + '.' + tag)
+    document_path = os.path.join(DOCUMENT_DIR, document_id + '.' + tag)
+    
+    print(document_path, collection_name)
 
     try:
         with sftp_client.open_sftp() as sftp_client:
@@ -105,10 +107,58 @@ def retrieve_documents_from_sftp(user_id:str, document_id:str, tag:str, collecti
                 )
             else :
                 sftp_client.get(
-                    remotepath=os.getenv('QNAP_SFTP_PUBLIC_DIR') + '/' + document_id + '.' + tag,
+                    remotepath=f"{os.getenv('QNAP_SFTP_PUBLIC_DIR')}/{user_id}/{document_id}.{tag}",
                     localpath=document_path
                 )
     except Exception as e:
-        print(e)
+        print(e, 'here')
         raise HTTPRequestException(message="Failed to retrieve the document", status_code=500)
+    
+def move_documents_from(user_id:str, document_id:str, tag:str, collection_name:str):
+    sftp_client = create_sftp_client()                
+    print('mindahin docs')
+    try:
+        sftp_client.connect(
+            hostname=os.getenv('QNAP_SFTP_IP'),
+            port=int(os.getenv('QNAP_SFTP_PORT')),
+            username=os.getenv('QNAP_SFTP_USERNAME'),
+            password=os.getenv('QNAP_SFTP_PASSWORD')
+        )
+    except Exception as e:
+        print(e, 'siniiii')
+        raise HTTPRequestException(message="Failed to connect to the server", status_code=500)
+    
+    try:
+        with sftp_client.open_sftp() as sftp_client:
+            if collection_name == 'private':
+                source_path = f"{os.getenv('QNAP_SFTP_PRIVATE_DIR')}/{user_id}"
+                destination_path = f"{os.getenv('QNAP_SFTP_PUBLIC_DIR')}/{user_id}"
+                
+                check_directory(sftp_client, destination_path)
+                
+                sftp_client.rename(f"{source_path}/{document_id}.{tag}", f"{destination_path}/{document_id}.{tag}")
+            else :
+                source_path = f"{os.getenv('QNAP_SFTP_PUBLIC_DIR')}/{user_id}"
+                destination_path = f"{os.getenv('QNAP_SFTP_PRIVATE_DIR')}/{user_id}"
+                
+                check_directory(sftp_client, destination_path)
+                
+                sftp_client.rename(f"{source_path}/{document_id}.{tag}", f"{destination_path}/{document_id}.{tag}")
+    except Exception as e:
+        print(e, 'sanaaaa')
+        raise HTTPRequestException(message="Failed to retrieve the document", status_code=500)            
+
+def check_directory(sftp, path:str) :
+    try:
+        sftp.chdir(path)
+    except IOError:
+        # Directory does not exist, create it
+        mkdir_p(sftp, path)
+        sftp.chdir(path)
+        
+def mkdir_p(sftp, remote_directory):
+    try:
+        sftp.stat(remote_directory)
+    except IOError:
+        sftp.mkdir(remote_directory)
 

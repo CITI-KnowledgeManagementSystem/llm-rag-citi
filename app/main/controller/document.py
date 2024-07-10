@@ -8,10 +8,11 @@ def insert_document_to_vdb():
     document_id = body.get('document_id')
     user_id = body.get('user_id')
     tag = body.get('tag')
-    collection_name = body.get('collection_name')  
+    collection_name = body.get('collection_name')
+    change = body.get('change', False)
     
     try:
-        insert_doc(document_id, user_id, tag, collection_name)
+        insert_doc(str(document_id), user_id, tag, collection_name, change)
         return HTTPRequestSuccess(message="Document has been added", status_code=201).to_response()
     
     except HTTPRequestException as e:
@@ -20,7 +21,6 @@ def insert_document_to_vdb():
     
 
 def delete_document_from_vdb():
-    print('delete')
     args = request.args
     document_id = args.get('document_id')
     collection_name = args.get('collection_name')

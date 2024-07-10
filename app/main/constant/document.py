@@ -11,7 +11,7 @@ DOCUMENT_READERS = {
     'md': UnstructuredMarkdownLoader
 }
 EMBEDDING_MODEL = "Alibaba-NLP/gte-large-en-v1.5"
-CHUNK_SIZE = 1024
+CHUNK_SIZE = 512
 CHUNK_OVERLAP = 10 
-NUMBER_RETRIEVAL = 10
+NUMBER_RETRIEVAL = 5
 

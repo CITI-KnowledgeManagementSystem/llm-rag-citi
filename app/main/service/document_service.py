@@ -8,11 +8,11 @@ from ..response import HTTPRequestException
 import os
 
 
-def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
+def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, change=False):
     if not document_id or not user_id or not tag or not collection_name:
         raise HTTPRequestException(message="Please fill all the required fields")
 
-    document_path = os.path.join(DOCUMENT_DIR, collection_name, document_id + '.' + tag)
+    document_path = os.path.join(DOCUMENT_DIR, document_id + '.' + tag)
 
     if not check_collection_validation(collection_name):
         raise HTTPRequestException(message="The provided collection doesn't exist")
@@ -20,15 +20,28 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str):
     if not check_document_validation(tag):
         raise HTTPRequestException(message="The provided document is not valid")
     
-    collection = Collection(collection_name)
+    print(document_id, user_id, tag, collection_name, document_path, change)
     
-    # retrieve the document from sftp   
     retrieve_documents_from_sftp(
         user_id=user_id,
         document_id=document_id,
         tag=tag,
         collection_name=collection_name,
-    )          
+    )
+    
+    if (change):
+        move_documents_from(
+            user_id=user_id,
+            document_id=document_id,
+            tag=tag,
+            collection_name=collection_name,
+        )
+    
+    collection_name = collection_name if change==False else "public" if collection_name=="private" else "private"
+    
+    collection = Collection(collection_name)
+    
+    # retrieve the document from sftp             
 
     # read the file
     document_data = read_file(document_path, tag)
