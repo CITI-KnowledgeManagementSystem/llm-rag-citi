@@ -9,12 +9,10 @@ Another criteria is that the response should not specify which time period the i
 Question: {question}
 """
 PROMPT_TEMPLATE = """
-You are a helpful, respectful and honest assistant.
-Always answer a question based on the INSTRUCTION.
-
 INSTRUCTION: 
+You are a helpful, respectful and honest assistant.
 Answer the QUESTION with the help by the CONTEXT provided. If the question can't be answered, use your knowledge to answer the question.
-You don't have to explain everything if there are options to answer the question directly.
+You don't have to explain everything if there are options to answer the question directly. 
 
 CONTEXT:
 {context}
