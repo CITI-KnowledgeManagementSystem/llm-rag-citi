@@ -11,7 +11,6 @@ async def get_context(question:str):
     llm_chain = prompt | hyde_llm | StrOutputParser()
     print('question', question);
     context = await llm_chain.ainvoke({'question':question})
-    print('here')
     return context
 
 
