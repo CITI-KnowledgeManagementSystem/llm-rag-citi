@@ -25,7 +25,7 @@ db.using_database(db_name=db_name)
 
 # create schema
 id = FieldSchema(name="id", dtype=DataType.VARCHAR, max_length=40, is_primary=True)
-content = FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=600)
+content = FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=4096)
 vector = FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=1024)
 user_id = FieldSchema(name="user_id", dtype=DataType.VARCHAR, max_length=40)
 document_id = FieldSchema(name="document_id", dtype=DataType.VARCHAR, max_length=100)
