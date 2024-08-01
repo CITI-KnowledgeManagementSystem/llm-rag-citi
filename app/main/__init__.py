@@ -5,7 +5,6 @@ from langchain_openai import ChatOpenAI
 from sentence_transformers import SentenceTransformer
 import torch
 import threading
-import os
 
 from .config import config_by_name
 from .constant.document import EMBEDDING_MODEL
@@ -24,6 +23,14 @@ hyde_llm = ChatOpenAI(
 semaphore = threading.Semaphore(2)
 
 generation_llm = ChatOpenAI(
+    openai_api_base = LLM_URL,
+    model_name=MODEL,
+    temperature=TEMPERATURE,
+    openai_api_key="-",
+    max_tokens=MAX_TOKENS,
+)
+
+gaudi_generation_llm = ChatOpenAI(
     openai_api_base = LLM_URL,
     model_name=MODEL,
     temperature=TEMPERATURE,

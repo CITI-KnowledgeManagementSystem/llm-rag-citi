@@ -46,27 +46,20 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             "limit" : NUMBER_RETRIEVAL*2,
             "param": {
                 "metric_type": 'COSINE'
-            }, 
-            "expr" : f"user_id == '{user_id}'"
+            }
         }
-
+        
+        if collection_name == 'private' : 
+            searchreq1["expr"] = f"user_id == '{user_id}'"
+    
         req1 = AnnSearchRequest(**searchreq1)
 
-        if collection_name == 'private' : 
-            res = collection.hybrid_search(
-                reqs=[req1],
-                rerank=WeightedRanker(1),
-                limit = NUMBER_RETRIEVAL,
-                output_fields=["document_id", "content"]
-            )
-        else : 
-            res = collection.hybrid_search(
-                reqs=[req1],
-                rerank=WeightedRanker(1),
-                limit = NUMBER_RETRIEVAL,
-                output_fields=["document_id", "content"]
-            )
-
+        res = collection.hybrid_search(
+            reqs=[req1],
+            rerank=WeightedRanker(1),
+            limit = NUMBER_RETRIEVAL,
+            output_fields=["document_id", "content"]
+        )
     else :
         if collection_name == 'private':
             res = collection.search(data=[embeddings], anns_field='vector', param=params, limit=NUMBER_RETRIEVAL, expr=f"user_id == '{user_id}'", output_fields=["document_id", "content"])
