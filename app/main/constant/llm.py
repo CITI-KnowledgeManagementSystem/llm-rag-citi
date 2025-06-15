@@ -17,7 +17,7 @@ You don't have to explain everything if there are options to answer the question
 CONTEXT:
 {context}
 """
-MODEL = "gpt-4"
+MODEL = "gpt-4o"
 N_HYDE_INSTANCE = 1
 TEMPERATURE = 0.01
 IS_STREAM = False

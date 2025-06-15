@@ -40,7 +40,7 @@ async def question_answer(question:str, user_id:str, conversations_history:list,
             content.append(doc.get('content')                           )
         for doc in public_documents:
             content.append(doc.get('content'))
-        # print('content', content)
+        print('content', content)
 
         messages = [
             { 
@@ -53,6 +53,7 @@ async def question_answer(question:str, user_id:str, conversations_history:list,
                 "content": question
             }
         ]
+        print("\n\n\nmessages", messages)
     
         res = await generation_llm.ainvoke(messages)
 
