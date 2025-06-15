@@ -17,7 +17,7 @@ hyde_llm = ChatOpenAI(
     model_name = MODEL,
     n=N_HYDE_INSTANCE,
     temperature=TEMPERATURE,
-    openai_api_key="None"
+    openai_api_key="None",
 )
 
 semaphore = threading.Semaphore(2)
@@ -26,7 +26,7 @@ generation_llm = ChatOpenAI(
     openai_api_base = LLM_URL,
     model_name=MODEL,
     temperature=TEMPERATURE,
-    openai_api_key="-",
+    openai_api_key="test",
     max_tokens=MAX_TOKENS,
 )
 
@@ -34,7 +34,7 @@ gaudi_generation_llm = ChatOpenAI(
     openai_api_base = LLM_URL,
     model_name=MODEL,
     temperature=TEMPERATURE,
-    openai_api_key="-",
+    openai_api_key="test",
     max_tokens=MAX_TOKENS,
 )
 
