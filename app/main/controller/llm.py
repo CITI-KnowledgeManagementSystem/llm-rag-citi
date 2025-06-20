@@ -14,8 +14,9 @@ async def chat_with_llm():
     reranking = body.get('reranking')
     reranking = True if reranking == 'true' else False
     user_id = body.get('user_id')
+    print(body)
     print(hyde, reranking)
-
+    
     try:
         res = await question_answer(question, user_id, conversation_history, hyde, reranking)
         return HTTPRequestSuccess(message="Success", status_code=200, payload=res).to_response() 
