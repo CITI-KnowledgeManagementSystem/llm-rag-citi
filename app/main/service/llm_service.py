@@ -5,7 +5,8 @@ from ..util.llm import format_conversation_history, get_context
 from ..constant.llm import PROMPT_TEMPLATE
 
 
-async def question_answer(question:str, user_id:str, conversations_history:list, hyde:bool=False, reranking:bool=False,):
+async def question_answer(question: str, user_id: str, conversations_history: list, 
+                        hyde: bool = False, reranking: bool = False):
     print(user_id)
     if not question or not user_id:
         raise HTTPRequestException(message="Please provide both question & user_id", status_code=400)
@@ -19,7 +20,7 @@ async def question_answer(question:str, user_id:str, conversations_history:list,
         else:
             context = question
             
-        print('context', context)
+        print('context ==', context)
 
         # context retrieval with reranking option
         question_embeddings = document_to_embeddings(context)
@@ -37,27 +38,27 @@ async def question_answer(question:str, user_id:str, conversations_history:list,
         # get content from each doc
         content = []
         for doc in private_documents:
-            content.append(doc.get('content')                           )
+            content.append(doc.get('content'))
         for doc in public_documents:
             content.append(doc.get('content'))
         print('content', content)
 
+        # Membuat messages dalam format yang sesuai dengan llama_index
+
+        
+        from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+        from llama_index.llms.openai import OpenAI
+        
         messages = [
-            { 
-                "role": "system", 
-                "content": PROMPT_TEMPLATE.format(context=content) 
-            }
-        ] + formatted_history + [
-            {
-                "role": "user",
-                "content": question
-            }
+            ChatMessage(role="system", content=PROMPT_TEMPLATE.format(context=content)),
+            ChatMessage(role="user", content=question)
         ]
         print("\n\n\nmessages", messages)
-    
-        res = await generation_llm.ainvoke(messages)
 
-        return res.content
+    
+        # Perubahan pada pemanggilan LLM
+        response = await generation_llm.achat(messages)
+        return response.message.content
     
     except Exception as e:
         print(e)

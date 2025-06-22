@@ -1,5 +1,6 @@
 from pymilvus import utility, Collection
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain.text_splitter import RecursiveCharacterTextSplitter
+from llama_index.core.node_parser import SentenceSplitter
 import os
 from pymilvus import WeightedRanker, AnnSearchRequest
 import paramiko
@@ -31,8 +32,10 @@ def read_file(file_path:str, tag:str):
 
 
 def split_documents(document_data):
-    splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
-    return splitter.split_documents(document_data)
+    # splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+    splitter = SentenceSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+    # splitter = 
+    return splitter.get_nodes_from_documents(document_data)
 
 
 def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None):

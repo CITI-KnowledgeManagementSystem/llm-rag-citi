@@ -12,7 +12,7 @@ if len(sys.argv) < 2:
     raise Exception("Please provide a environment name and a database name")
 
 connections.connect(
-    uri=os.getenv('MILVUS_URI_DEV' if sys.argv[1] == 'dev' else 'MILVUS_URI_PROD'),
+    uri=os.getenv('MILVUS_URI_DEV' if sys.argv[1] == 'default' else 'MILVUS_URI_PROD'),
     user=os.getenv('MILVUS_USERNAME'),
     password=os.getenv('MILVUS_PASSWORD'),
 )
