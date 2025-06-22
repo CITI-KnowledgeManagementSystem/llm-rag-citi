@@ -10,6 +10,8 @@ def insert_document_to_vdb():
     tag = body.get('tag')
     collection_name = body.get('collection_name')
     change = body.get('change', False)
+    print(document_id, user_id, tag, collection_name, change )
+ 
     
     try:
         insert_doc(str(document_id), user_id, tag, collection_name, change)
@@ -17,6 +19,7 @@ def insert_document_to_vdb():
     
     except HTTPRequestException as e:
         print(e.message)
+        print(document_id, user_id, tag, collection_name, change)
         return e.to_response()
     
 
