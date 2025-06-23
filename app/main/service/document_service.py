@@ -45,21 +45,26 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, chang
 
     # read the file
     document_data = read_file(document_path, tag)
+    print('DOKUMEN DATA COYY ============',document_data)
     splitted_document_data = split_documents(document_data)
-    
+    print(f"Total chunks/nodes yang dihasilkan: {len(splitted_document_data)}")
+
     # contain objects
     data_objects = []
     for doc in splitted_document_data:
         data = {
             "id": str(uuid4()),
-            "vector": document_to_embeddings(doc.page_content),
-            "content": doc.page_content,
+            "vector": document_to_embeddings(doc.text),
+            "content": doc.text,
             "user_id": user_id,
-            "document_id": document_id
+            "document_id": document_id,
+            # "metadata": doc.metadata
         }
         data_objects.append(data)
     
     try:
+        for data in data_objects:
+            print(f"Document ID: {data['document_id']}, User ID: {data['user_id']}, Content: {data['content']}...")  # Print first 50 characters of content for brevity
         collection.insert(data=data_objects)
 
     except Exception as e:

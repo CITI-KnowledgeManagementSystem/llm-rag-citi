@@ -1,1 +1,0 @@
-Hello Alex Fergucci, how can I help you today? If you have a question or need assistance, please feel free to ask.
