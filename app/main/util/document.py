@@ -27,13 +27,20 @@ def document_to_embeddings(content:str) -> list:
 
 
 def read_file(file_path:str, tag:str):
-    loader_cls = DOCUMENT_READERS[tag]
-    return loader_cls(file_path).load()
+    loader = DOCUMENT_READERS[tag]
+    if tag == 'pdf':
+        loader_cls = loader()
+        return loader_cls.load_data(file_path)
+    elif tag == 'md':
+        loader_cls = loader()
+        return loader_cls.load_data(file_path)
+    else:
+        return loader(input_files=[file_path]).load_data()
 
 
 def split_documents(document_data):
     # splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
-    splitter = SentenceSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+    splitter = SentenceSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP, include_metadata=True)
     # splitter = 
     return splitter.get_nodes_from_documents(document_data)
 

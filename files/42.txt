@@ -1,0 +1,4 @@
+Script penting intern
+
+docker run --name some-postgres -e POSTGRES_PASSWORD=gunawan123 -e POSTGRES_USER=gunawan -e POSTGRES_DB=dev -p 5432:5432 -d postgres
+
