@@ -9,6 +9,10 @@ from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CH
 from ...main import embedding_model
 from ..response import HTTPRequestException
 
+import requests
+
+from typing import List
+
 
 def check_document_validation(tag:str) -> bool:
     return tag in ACCEPTED_FILES
@@ -22,9 +26,33 @@ def check_document_exists(document_path:str) -> bool:
     return os.path.isfile(document_path)
 
 
-def document_to_embeddings(content:str) -> list:
-    return embedding_model.encode(content, show_progress_bar=True)
+# def document_to_embeddings(content:str) -> list:
+#     response = requests.post("http://140.118.101.181:1234/embed", json=content)
+#     if response.status_code == 200:
+#         return response.json()["embeddings"]
+#     else:
+#         raise HTTPRequestException(message="Failed to get embeddings", status_code=response.status_code)
 
+def document_to_embeddings(content: str) -> List[float]:
+    try:
+        response = requests.post(
+            "http://140.118.101.181:1234/embed",
+            json={"content": content},  # Send as proper JSON object
+            timeout=30  # Add reasonable timeout
+        )
+        
+        if response.status_code == 200:
+            return response.json()["embeddings"]
+        else:
+            raise HTTPRequestException(
+                message=response.json().get("detail", "Failed to get embeddings"),
+                status_code=response.status_code
+            )
+    except requests.exceptions.RequestException as e:
+        raise HTTPRequestException(
+            message=str(e),
+            status_code=getattr(e.response, 'status_code', 500) if hasattr(e, 'response') else 500
+        )
 
 def read_file(file_path:str, tag:str):
     loader = DOCUMENT_READERS[tag]
@@ -47,6 +75,7 @@ def split_documents(document_data):
 
 def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None):
     collection = Collection(collection_name)
+    print('retrieving all documents from vdb: ', collection.num_entities)
     params = { "metric_type": 'COSINE' }
 
     if reranking == True:
