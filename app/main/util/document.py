@@ -175,7 +175,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
     collection = Collection(collection_name)
     print('retrieving all documents from vdb: ', collection.num_entities)
     # params = {"metric_type": 'COSINE', "reranker": "jina-reranker-v1-base-en", "provider": "vllm", "queries": [query], "endpoint": "http://localhost:8080/v1/rerank"}
-    base_params = {"metric_type": 'COSINE'}
+    base_params = {"metric_type": 'IP'}  # Use IP for hybrid search compatibility
 
     if reranking:
         if not query:
