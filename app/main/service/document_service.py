@@ -52,19 +52,39 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, chang
     # contain objects
     data_objects = []
     for doc in splitted_document_data:
-        data = {
-            "id": str(uuid4()),
-            "vector": document_to_embeddings(doc.text),
-            "content": doc.text,
-            "user_id": user_id,
-            "document_id": document_id,
-            # "metadata": doc.metadata
-        }
-        data_objects.append(data)
+        try:
+            # Get both dense and sparse embeddings in one call
+            embeddings_result = document_to_embeddings_bge_m3(doc.text)
+            
+            # Ensure sparse vector format is compatible with Milvus
+            # Convert string keys to integers if needed
+            sparse_vector = embeddings_result["sparse"]
+            if isinstance(sparse_vector, dict):
+                # Convert string keys to integers if they exist
+                formatted_sparse_vector = {
+                    int(k) if isinstance(k, str) else k: float(v) 
+                    for k, v in sparse_vector.items()
+                }
+            else:
+                formatted_sparse_vector = sparse_vector
+            
+            data = {
+                "id": str(uuid4()),
+                "vector": embeddings_result["dense"],
+                "sparse_vector": formatted_sparse_vector,
+                "content": doc.text,
+                "user_id": user_id,
+                "document_id": document_id,
+                # "metadata": doc.metadata
+            }
+            data_objects.append(data)
+        except Exception as e:
+            print(f"Failed to generate embeddings: {str(e)}")
+            raise HTTPRequestException(message=f"Failed to generate embeddings: {str(e)}", status_code=500)
     
     try:
         for data in data_objects:
-            print(f"Document ID: {data['document_id']}, User ID: {data['user_id']}, Content: {data['content']}...")  # Print first 50 characters of content for brevity
+            print(f" ID: {data['id']}, Document ID: {data['document_id']}, User ID: {data['user_id']}, Content: {data['content']}")
         collection.insert(data=data_objects)
 
     except Exception as e:

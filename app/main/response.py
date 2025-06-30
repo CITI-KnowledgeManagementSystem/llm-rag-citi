@@ -10,6 +10,9 @@ class HTTPRequestException(Exception):
             self.status_code = 400
         self.payload = payload
 
+    def __str__(self):
+        return f"HTTPRequestException: {self.message} (Status: {self.status_code})"
+
     def to_dict(self):
         error_dict = dict()
 

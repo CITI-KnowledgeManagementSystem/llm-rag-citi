@@ -1,6 +1,6 @@
 from ..response import HTTPRequestException
 from ...main import generation_llm
-from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
+from ..util.document import retrieve_documents_from_vdb, document_to_embeddings_bge_m3
 from ..util.llm import format_conversation_history, get_context
 from ..constant.llm import PROMPT_TEMPLATE
 
@@ -23,17 +23,22 @@ async def question_answer(question: str, user_id: str, conversations_history: li
         print('context ==', context)
 
         # context retrieval with reranking option
-        question_embeddings = document_to_embeddings(context)
+        # question_embeddings = document_to_embeddings(context)
+        question_embeddings = document_to_embeddings_bge_m3(context)
         private_documents = retrieve_documents_from_vdb(
-                                embeddings=question_embeddings, 
+                                embeddings=question_embeddings["dense"], 
                                 user_id=user_id, 
                                 collection_name='private', 
-                                reranking=reranking
+                                reranking=reranking,
+                                query=question,
+                                sparse_embeddings=question_embeddings["sparse"]
                             )
         public_documents = retrieve_documents_from_vdb(
-                                embeddings=question_embeddings, 
+                                embeddings=question_embeddings["dense"], 
                                 collection_name='public', 
-                                reranking=reranking
+                                reranking=reranking,
+                                query=question,
+                                sparse_embeddings=question_embeddings["sparse"]
                             )
         # get content from each doc
         content = []
