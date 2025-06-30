@@ -12,7 +12,7 @@ from ..response import HTTPRequestException
 import requests
 
 from typing import List
-
+from ragas import evaluate
 
 def check_document_validation(tag:str) -> bool:
     return tag in ACCEPTED_FILES
@@ -35,8 +35,9 @@ def check_document_exists(document_path:str) -> bool:
 
 def document_to_embeddings(content: str) -> List[float]:
     try:
+        embedding_url = os.getenv('EMBEDDING_URL')
         response = requests.post(
-            "http://140.118.101.181:1234/embed",
+            f'{embedding_url}/embed',  
             json={"content": content},  # Send as proper JSON object
             timeout=30  # Add reasonable timeout
         )
@@ -56,14 +57,17 @@ def document_to_embeddings(content: str) -> List[float]:
 
 def read_file(file_path:str, tag:str):
     loader = DOCUMENT_READERS[tag]
-    if tag == 'pdf':
+    if tag in ['pdf', 'md',  'html', 'htm', 'ipynb', 
+               'jpg', 'jpeg', 'png', 'bmp', 'tiff']:
         loader_cls = loader()
         return loader_cls.load_data(file_path)
-    elif tag == 'md':
-        loader_cls = loader()
-        return loader_cls.load_data(file_path)
-    else:
+    # Handle SimpleDirectoryReader for text-based files
+    elif tag in ['txt', 'docx', 'doc','py', 'json', 'pptx', 'ppt']:
         return loader(input_files=[file_path]).load_data()
+    # Handle pandas-based readers
+    elif tag in ['csv', 'xlsx', 'xls']:
+        loader_cls = loader()
+        return loader_cls.load_data(file_path)
 
 
 def split_documents(document_data):
@@ -88,10 +92,14 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             }
         }
         
+        print('searchreq1', searchreq1)
+        
         if collection_name == 'private' : 
             searchreq1["expr"] = f"user_id == '{user_id}'"
     
         req1 = AnnSearchRequest(**searchreq1)
+        
+        print('req1', req1)
 
         res = collection.hybrid_search(
             reqs=[req1],
