@@ -2,7 +2,7 @@ from pymilvus import utility, Collection
 # from langchain.text_splitter import RecursiveCharacterTextSplitter
 from llama_index.core.node_parser import SentenceSplitter
 import os
-from pymilvus import AnnSearchRequest, Function, FunctionType
+from pymilvus import AnnSearchRequest, Function, FunctionType, WeightedRanker
 import paramiko
 
 from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL, DOCUMENT_DIR
@@ -227,9 +227,8 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
         try:
             # Perform hybrid search with built-in reranking
             hybrid_results = collection.hybrid_search(
-                collection_name=collection_name,
                 reqs=[dense_req, sparse_req],
-                ranker=vllm_ranker,
+                rerank=vllm_ranker,  # Use 'rerank' parameter instead of 'ranker'
                 limit=NUMBER_RETRIEVAL,
                 output_fields=["document_id", "content"]
             )
@@ -237,31 +236,48 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             print('========================== HYBRID SEARCH RESULTS ==============================')
             print('hybrid_results', hybrid_results)
             
-            return hybrid_results
+            # Return the first (and usually only) result set from hybrid search
+            return hybrid_results[0] if hybrid_results else []
             
         except Exception as e:
-            print(f"Error with hybrid search: {e}")
-            # Fallback to dense search only
-            print("Falling back to dense search only...")
+            print(f"Error with hybrid search (with reranker): {e}")
             
-            if collection_name == 'private':
-                fallback_results = collection.search(
-                    data=[embeddings],
-                    anns_field='vector',
-                    param=base_params,
-                    limit=NUMBER_RETRIEVAL,
-                    expr=f"user_id == '{user_id}'",
-                    output_fields=["document_id", "content"]
-                )
-            else:
-                fallback_results = collection.search(
-                    data=[embeddings],
-                    anns_field='vector',
-                    param=base_params,
+            try:
+                # First fallback: Try hybrid search without custom reranker (use WeightedRanker)
+                print("Trying hybrid search with WeightedRanker...")
+                
+                hybrid_results = collection.hybrid_search(
+                    reqs=[dense_req, sparse_req],
+                    rerank=WeightedRanker(0.5, 0.5),  # Equal weights for dense and sparse
                     limit=NUMBER_RETRIEVAL,
                     output_fields=["document_id", "content"]
                 )
-            return fallback_results
+                
+                return hybrid_results[0] if hybrid_results else []
+                
+            except Exception as e2:
+                print(f"Error with hybrid search (WeightedRanker): {e2}")
+                # Final fallback: Dense search only
+                print("Falling back to dense search only...")
+                
+                if collection_name == 'private':
+                    fallback_results = collection.search(
+                        data=[embeddings],
+                        anns_field='vector',
+                        param=base_params,
+                        limit=NUMBER_RETRIEVAL,
+                        expr=f"user_id == '{user_id}'",
+                        output_fields=["document_id", "content"]
+                    )
+                else:
+                    fallback_results = collection.search(
+                        data=[embeddings],
+                        anns_field='vector',
+                        param=base_params,
+                        limit=NUMBER_RETRIEVAL,
+                        output_fields=["document_id", "content"]
+                    )
+                return fallback_results[0] if fallback_results else []
             
     else:
         # Non-reranking case - single vector search
@@ -282,7 +298,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                 limit=NUMBER_RETRIEVAL,
                 output_fields=["document_id", "content"]
             )
-        return res
+        return res[0] if res else []
 
 def create_sftp_client():
     client = paramiko.SSHClient()
