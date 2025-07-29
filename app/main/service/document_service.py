@@ -14,7 +14,7 @@ import json
 import datetime
 
 
-def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, change=False):
+def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, original_filename:str, change=False):
     if not document_id or not user_id or not tag or not collection_name:
         raise HTTPRequestException(message="Please fill all the required fields")
 
@@ -51,16 +51,17 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, chang
 
     # read the file
     document_data = read_file(document_path, tag)
-    print('DOKUMEN DATA COYY ============',document_data)
+    # print('DOKUMEN DATA COYY ============',document_data)
     splitted_document_data = split_documents(document_data)
     print(f"Total chunks/nodes yang dihasilkan: {len(splitted_document_data)}")
 
     # contain objects
     data_objects = []
     for doc in splitted_document_data:
+        # print(f"Metadata: {doc.metadata}")
         try:
             # Get both dense and sparse embeddings in one call
-            embeddings_result = document_to_embeddings_bge_m3(doc.text)
+            embeddings_result = document_to_embeddings(doc.text)
             
             # Ensure sparse vector format is compatible with Milvus
             # Convert string keys to integers if needed
@@ -81,6 +82,8 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, chang
                 "content": doc.text,
                 "user_id": user_id,
                 "document_id": document_id,
+                "document_name": original_filename,
+                "page_number": int(doc.metadata.get("source", 0)) if doc.metadata else 0,
                 # "metadata": doc.metadata
             }
             data_objects.append(data)
@@ -89,8 +92,8 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, chang
             raise HTTPRequestException(message=f"Failed to generate embeddings: {str(e)}", status_code=500)
     
     try:
-        for data in data_objects:
-            print(f" ID: {data['id']}, Document ID: {data['document_id']}, User ID: {data['user_id']}, Content: {data['content']}")
+        # for data in data_objects:
+            # print(f" ID: {data['id']}, Document ID: {data['document_id']}, User ID: {data['user_id']}, Content: {data['content']}")
         collection.insert(data=data_objects)
 
     except Exception as e:

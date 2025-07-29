@@ -29,9 +29,11 @@ content = FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=4096)
 vector = FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=1024)
 user_id = FieldSchema(name="user_id", dtype=DataType.VARCHAR, max_length=40)
 document_id = FieldSchema(name="document_id", dtype=DataType.VARCHAR, max_length=100)
+document_name_field = FieldSchema(name="document_name", dtype=DataType.VARCHAR, max_length=500)
+page_number_field = FieldSchema(name="page_number", dtype=DataType.INT64)
 
 schema = CollectionSchema([
-    id, content, vector, user_id, document_id
+    id, content, vector, user_id, document_id, document_name_field, page_number_field
 ])
 
 # create collections

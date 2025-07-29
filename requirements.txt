@@ -33,6 +33,7 @@ pydantic_core
 pymilvus
 pypdf
 python-dotenv
+ragas
 requests
 sentence-transformers
 SQLAlchemy
