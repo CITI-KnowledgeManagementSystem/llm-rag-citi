@@ -4,13 +4,15 @@ from llama_index.core.node_parser import SentenceSplitter
 import os
 from pymilvus import AnnSearchRequest, Function, FunctionType, WeightedRanker
 import paramiko
-
+from llama_index.core import Settings
 from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL, DOCUMENT_DIR
+# from ...main import embedding_model
 from ..response import HTTPRequestException
+from ...main import langchain_embedding_model
 
-import requests
-from typing import List, Dict
-from ragas import evaluate
+# import requests
+
+from typing import List
 
 def check_document_validation(tag:str) -> bool:
     return tag in ACCEPTED_FILES
@@ -24,89 +26,28 @@ def check_document_exists(document_path:str) -> bool:
     return os.path.isfile(document_path)
 
 
-# def document_to_embeddings(content:str) -> list:
-#     response = requests.post("http://140.118.101.181:1234/embed", json=content)
-#     if response.status_code == 200:
-#         return response.json()["embeddings"]
-#     else:
-#         raise HTTPRequestException(message="Failed to get embeddings", status_code=response.status_code)
-
 def document_to_embeddings(content: str) -> List[float]:
-    """Original function - returns dense embeddings only"""
-    try:
-        embedding_url = os.getenv('EMBEDDING_URL')
-        response = requests.post(
-            f'{embedding_url}/embed/simple',  # Use simple endpoint
-            json={"content": content},
-            timeout=30
-        )
+    return langchain_embedding_model.embed_with_hybrid_support(content)
+    # try:
+    #     response = requests.post(
+    #         "http://140.118.101.181:1234/embed",
+    #         json={"content": content},  # Send as proper JSON object
+    #         timeout=30  # Add reasonable timeout
+    #     )
         
-        if response.status_code == 200:
-            return response.json()["embeddings"]
-        else:
-            raise HTTPRequestException(
-                message=response.json().get("detail", "Failed to get embeddings"),
-                status_code=response.status_code
-            )
-    except requests.exceptions.RequestException as e:
-        raise HTTPRequestException(
-            message=str(e),
-            status_code=getattr(e.response, 'status_code', 500) if hasattr(e, 'response') else 500
-        )
+    #     if response.status_code == 200:
+    #         return response.json()["embeddings"]
+    #     else:
+    #         raise HTTPRequestException(
+    #             message=response.json().get("detail", "Failed to get embeddings"),
+    #             status_code=response.status_code
+    #         )
+    # except requests.exceptions.RequestException as e:
+    #     raise HTTPRequestException(
+    #         message=str(e),
+    #         status_code=getattr(e.response, 'status_code', 500) if hasattr(e, 'response') else 500
+    #     )
 
-def document_to_embeddings_bge_m3(content: str) -> Dict:
-    """
-    BGE-M3 version - returns both dense and sparse embeddings
-    Use this when you need hybrid search capabilities
-    """
-    try:
-        embedding_url = os.getenv('EMBEDDING_URL')
-        
-        # Log the request details
-        request_data = {
-            "content": content,
-            "model": "bge-m3",
-            "return_dense": True,
-            "return_sparse": True
-        }
-        print(f"Sending request to BGE-M3 service:")
-        print(f"URL: {embedding_url}/embed")
-        print(f"Content length: {len(content)}")
-        print(f"Content preview: {content[:100]}...")
-        
-        response = requests.post(
-            f'{embedding_url}/embed',
-            json=request_data,
-            timeout=30
-        )
-        
-        print(f"BGE-M3 service response status: {response.status_code}")
-        
-        if response.status_code == 200:
-            result = response.json()
-            print(f"BGE-M3 service response keys: {list(result.keys())}")
-            return {
-                "dense": result["dense_embeddings"],
-                "sparse": result["sparse_embeddings"]
-            }
-        else:
-            print(f"BGE-M3 service error response: {response.text}")
-            raise HTTPRequestException(
-                message=response.json().get("detail", "Failed to get embeddings"),
-                status_code=response.status_code
-            )
-    except requests.exceptions.RequestException as e:
-        print(f"Request exception when calling BGE-M3 service: {e}")
-        raise HTTPRequestException(
-            message=f"Network error calling embedding service: {str(e)}",
-            status_code=500
-        )
-    except Exception as e:
-        print(f"Unexpected error in document_to_embeddings_bge_m3: {e}")
-        raise HTTPRequestException(
-            message=f"Embedding generation error: {str(e)}",
-            status_code=500
-        )
 
 def read_file(file_path:str, tag:str):
     loader = DOCUMENT_READERS[tag]
@@ -230,7 +171,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                 reqs=[dense_req, sparse_req],
                 rerank=vllm_ranker,  # Use 'rerank' parameter instead of 'ranker'
                 limit=NUMBER_RETRIEVAL,
-                output_fields=["document_id", "content"]
+                output_fields=["document_id", "content", "document_name", "page_number"],
             )
             
             print('========================== HYBRID SEARCH RESULTS ==============================')
@@ -250,7 +191,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                     reqs=[dense_req, sparse_req],
                     rerank=WeightedRanker(0.5, 0.5),  # Equal weights for dense and sparse
                     limit=NUMBER_RETRIEVAL,
-                    output_fields=["document_id", "content"]
+                    output_fields=["document_id", "content","document_name", "page_number"]
                 )
                 
                 return hybrid_results[0] if hybrid_results else []
@@ -267,7 +208,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                         param=base_params,
                         limit=NUMBER_RETRIEVAL,
                         expr=f"user_id == '{user_id}'",
-                        output_fields=["document_id", "content"]
+                        output_fields=["document_id", "content","document_name", "page_number"]
                     )
                 else:
                     fallback_results = collection.search(
@@ -275,7 +216,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                         anns_field='vector',
                         param=base_params,
                         limit=NUMBER_RETRIEVAL,
-                        output_fields=["document_id", "content"]
+                        output_fields=["document_id", "content","document_name", "page_number"]
                     )
                 return fallback_results[0] if fallback_results else []
             
@@ -288,7 +229,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                 param=base_params,
                 limit=NUMBER_RETRIEVAL,
                 expr=f"user_id == '{user_id}'",
-                output_fields=["document_id", "content"]
+                output_fields=["document_id", "content","document_name", "page_number"]
             )
         else:
             res = collection.search(
@@ -296,7 +237,7 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                 anns_field='vector',  # Use specific field name
                 param=base_params,
                 limit=NUMBER_RETRIEVAL,
-                output_fields=["document_id", "content"]
+                output_fields=["document_id", "content","document_name", "page_number"]
             )
         return res[0] if res else []
 
@@ -318,7 +259,9 @@ def retrieve_documents_from_sftp(user_id:str, document_id:str, tag:str, collecti
     except Exception as e:
         print(e)
         raise HTTPRequestException(message="Failed to connect to the server", status_code=500)
-
+   
+    os.makedirs(DOCUMENT_DIR, exist_ok=True)
+    print(f"Memastikan direktori {DOCUMENT_DIR} ada...")
     document_path = os.path.join(DOCUMENT_DIR, document_id + '.' + tag)
     
     print(document_path, collection_name)
