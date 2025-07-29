@@ -1,0 +1,124 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mind Map from /home/ma012/Documents/llm-rag-citi/files/Test Ragas Input.pdf</title>
+        <script src="https://cdn.jsdelivr.net/npm/markmap-view"></script>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f8f9fa;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 20px auto;
+                padding: 20px;
+                background: white;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                border-radius: 8px;
+            }
+            header {
+                border-bottom: 1px solid #eaeaea;
+                padding-bottom: 15px;
+                margin-bottom: 20px;
+            }
+            h1 {
+                color: #2c3e50;
+                margin-bottom: 5px;
+            }
+            .file-info {
+                color: #7f8c8d;
+                font-size: 0.9em;
+            }
+            #mindmap {
+                width: 100%;
+                height: 600px;
+                border: 1px solid #eaeaea;
+                border-radius: 4px;
+                margin: 20px 0;
+            }
+            .controls {
+                margin: 15px 0;
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .btn {
+                padding: 8px 16px;
+                background-color: #3498db;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                text-decoration: none;
+                font-size: 14px;
+            }
+            .btn:hover {
+                background-color: #2980b9;
+            }
+            .metadata {
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 4px;
+                margin-top: 20px;
+                font-size: 0.9em;
+                color: #555;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>Mind Map: /home/ma012/Documents/llm-rag-citi/files/Test Ragas Input.pdf</h1>
+                <div class="file-info">Source: /home/ma012/Documents/llm-rag-citi/files/Test Ragas Input.pdf</div>
+            </header>
+            
+            <div id="mindmap"></div>
+            
+            <div class="controls">
+                <a href="#" onclick="downloadMarkdown()" class="btn">Download Markdown</a>
+                <a href="#" onclick="downloadHTML()" class="btn">Download HTML</a>
+            </div>
+        </div>
+        
+        <script>
+            // Initialize mindmap
+            markmap.Html('div#mindmap', {
+                content: "# RAGAS: Automated Evaluation of Retrieval Augmented Generation\n## Conference\n- 18th Conference of the European Chapter of the Association for Computational Linguistics System Demonstrations\n- Date: March 17-22, 2024\n- Pages: 150\u2013158\n\n## Authors\n- Shahul Es\u2020\n- Jithin James\u2020\n- Luis Espinosa-Anke\u2217\u2662\n- Steven Schockaert\u2217\n\n## Research Topic\n- Automated Evaluation of Retrieval Augmented Generation\n\n## Components\n1. **RAGAS Overview**\n   - Introduction to the system\n   - Purpose and methodology\n   - Key findings\n\n2. **Evaluation Metrics**\n   - Types of metrics used\n   - Comparison with existing methods\n   - Results and analysis\n\n3. **System Architecture**\n   - Components of the system\n   - Workflow and processes\n   - Technical details\n\n4. **Case Studies**\n   - Examples of application\n   - Impact and benefits\n   - Challenges and limitations\n\n5. **Future Work**\n   - Potential improvements\n   - Directions for future research\n   - Conclusion and recommendations",
+                zoom: true,
+                pan: true
+            });
+            
+            // Download functions
+            function downloadMarkdown() {
+                const blob = new Blob(["# RAGAS: Automated Evaluation of Retrieval Augmented Generation\n## Conference\n- 18th Conference of the European Chapter of the Association for Computational Linguistics System Demonstrations\n- Date: March 17-22, 2024\n- Pages: 150\u2013158\n\n## Authors\n- Shahul Es\u2020\n- Jithin James\u2020\n- Luis Espinosa-Anke\u2217\u2662\n- Steven Schockaert\u2217\n\n## Research Topic\n- Automated Evaluation of Retrieval Augmented Generation\n\n## Components\n1. **RAGAS Overview**\n   - Introduction to the system\n   - Purpose and methodology\n   - Key findings\n\n2. **Evaluation Metrics**\n   - Types of metrics used\n   - Comparison with existing methods\n   - Results and analysis\n\n3. **System Architecture**\n   - Components of the system\n   - Workflow and processes\n   - Technical details\n\n4. **Case Studies**\n   - Examples of application\n   - Impact and benefits\n   - Challenges and limitations\n\n5. **Future Work**\n   - Potential improvements\n   - Directions for future research\n   - Conclusion and recommendations"], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'mindmap_a.md';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            function downloadHTML() {
+                const html = document.documentElement.outerHTML;
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'mindmap_a.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        </script>
+    </body>
+    </html>
+    

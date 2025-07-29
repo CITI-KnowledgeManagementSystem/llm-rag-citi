@@ -1,5 +1,5 @@
 from flask import request
-from ..service.document_service import insert_doc, delete_doc, check_doc
+from ..service.document_service import *
 from ..response import HTTPRequestException, HTTPRequestSuccess
 
 
@@ -48,6 +48,29 @@ def check_document_exist_in_vdb():
     except HTTPRequestException as e:
         print(e.message)
         return e.to_response()
+    
+async def create_mind_map():  
+    # body = request.get_json()
+    cot = True
+    file_path = DOCUMENT_DIR + '/Test Ragas Input.pdf'
+    tag = 'pdf'
+    # user_id = body.get('user_id')
+    
+    print(file_path, tag)
+    
+    try:
+        res = await mind_map(file_path, tag)
+        output_file = "mindmap_output.html"
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(res)
+    
+        print(f"Mind map generated successfully: {output_file}")
+        return HTTPRequestSuccess(message="Mind map created", status_code=200, payload=res).to_response()
+    
+    except HTTPRequestException as e:
+        print(e.message)
+        return e.to_response()
+    
     
 
         
