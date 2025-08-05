@@ -16,31 +16,31 @@ async def chat_with_llm():
     reranking = body.get('reranking')
     reranking = True if reranking == 'true' else False
     user_id = body.get('user_id')
-    print(body)
-    print(hyde, reranking)
+    # print(body)
+    # print(hyde, reranking)
 
     try:
         # Panggil service lo seperti biasa untuk dapet jawaban
-        print("[Controller] Menerima request chat dengan LLM...")
-        final_answer, retrieved_doc_ids, all_documents = await question_answer(
+        print("[Controller] Request chat dengan LLM...")
+        final_answer, all_documents = await question_answer(
             question, user_id, conversation_history, hyde, reranking
         )
         response_payload = {
             "answer": final_answer,
-            "retrieved_doc_ids": retrieved_doc_ids # <-- Kunci baru, isinya list ID
+            "retrieved_docs": all_documents  # <-- Kunci baru, isinya list dokumen
         }
         
         # print("[Controller] Jawaban siap. Menjadwalkan evaluasi di background thread...")
         retrieved_contexts_list = [doc.get('content', 'N/A') for doc in all_documents]
         
         # Bikin thread baru
-        eval_thread = threading.Thread(
-            target=evaluate_single_turn_rag, # <-- Targetnya fungsi SYNC
-            args=(question, final_answer, retrieved_contexts_list) # <-- Argumennya
-        )
+        # eval_thread = threading.Thread(
+        #     target=evaluate_single_turn_rag, # <-- Targetnya fungsi SYNC
+        #     args=(question, final_answer, retrieved_contexts_list) # <-- Argumennya
+        # )
         
-        # Suruh thread-nya mulai kerja (Fire and Forget)
-        eval_thread.start()
+        # # Suruh thread-nya mulai kerja (Fire and Forget)
+        # eval_thread.start()
 
         # Controller langsung kirim jawaban ke user
         return HTTPRequestSuccess(message="Success", status_code=200, payload=response_payload).to_response() 
@@ -50,3 +50,26 @@ async def chat_with_llm():
     
     finally:
         semaphore.release()
+
+def evaluate_chat():
+    try:
+        body = request.get_json()
+        message_id = body.get('message_id')
+        question = body.get('question')
+        answer = body.get('answer')
+        contexts = body.get('contexts')
+
+        # Validasi input...
+        if not all([message_id, question, answer, contexts]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        # Jalankan di background thread
+        eval_thread = threading.Thread(
+            target=evaluate_single_turn_rag,
+            args=(message_id, question, answer, contexts)
+        )
+        eval_thread.start()
+
+        return jsonify({"status": "Evaluation scheduled"}), 202
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

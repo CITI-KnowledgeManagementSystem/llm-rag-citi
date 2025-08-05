@@ -21,7 +21,7 @@ async def question_answer(question: str, user_id: str, conversations_history: li
         else:
             context = question
             
-        print('context ==', context)
+        # print('context ==', context)
 
         # context retrieval with reranking option
         # question_embeddings = document_to_embeddings(context)
@@ -51,7 +51,7 @@ async def question_answer(question: str, user_id: str, conversations_history: li
         all_documents = private_docs_labeled + public_docs_labeled
 
         # 3. Sekarang, cara nampilinnya jadi lebih kaya
-        print("\n--- HASIL PENCARIAN DOKUMEN ---")
+        # print("\n--- HASIL PENCARIAN DOKUMEN ---")
         for idx, doc in enumerate(all_documents):
             # Ambil semua data dari tiap 'doc'
             doc_content = doc.get('content', 'N/A')
@@ -59,12 +59,12 @@ async def question_answer(question: str, user_id: str, conversations_history: li
             doc_page = doc.get('page_number', 'N/A')
             doc_source = doc.get('source', 'N/A')
 
-            print("-------------------------------------")
-            print(f"Kutipan Relevan #{idx + 1}")
-            print(f"\nIsi Kutipan:\n{doc_content}\n")
+            # print("-------------------------------------")
+            # print(f"Kutipan Relevan #{idx + 1}")
+            # print(f"\nIsi Kutipan:\n{doc_content}\n")
            
-            print(f"Sumber: {doc_name} (Halaman: {doc_page}) [Koleksi: {doc_source}]") 
-            print("-------------------------------------")
+            # print(f"Sumber: {doc_name} (Halaman: {doc_page}) [Koleksi: {doc_source}]") 
+            # print("-------------------------------------")
 
             # 2. Format tiap dokumen jadi blok teks yang rapi
             snippet = (
@@ -90,11 +90,18 @@ async def question_answer(question: str, user_id: str, conversations_history: li
         # Perubahan pada pemanggilan LLM
         response = await generation_llm.achat(messages)
         final_answer = response.message.content
-        print ("[LLM Service] Jawaban dari LLM:", final_answer)
-        retrieved_doc_ids = [doc.get('document_id') for doc in all_documents if doc.get('document_id')]
-
-
-        return final_answer, retrieved_doc_ids, all_documents
+        # print ("[LLM Service] Jawaban dari LLM:", final_answer)
+        docs_to_return = []
+        for doc in all_documents:
+            docs_to_return.append({
+                "document_id": doc.get('document_id'),
+                "content": doc.get('content'),
+                "document_name": doc.get('document_name'),
+                "page_number": doc.get('page_number'),
+                "source": doc.get('source')
+            })
+        # print ("[LLM Service] Dokumen yang akan dikembalikan:", docs_to_return)
+        return final_answer, docs_to_return
 
     
     except Exception as e:
