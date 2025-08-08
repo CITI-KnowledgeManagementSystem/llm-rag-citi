@@ -100,7 +100,6 @@ async def question_answer(question: str, user_id: str, conversations_history: li
                 "page_number": doc.get('page_number'),
                 "source": doc.get('source')
             })
-        # print ("[LLM Service] Dokumen yang akan dikembalikan:", docs_to_return)
         return final_answer, docs_to_return
 
     

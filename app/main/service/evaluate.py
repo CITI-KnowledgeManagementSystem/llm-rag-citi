@@ -1,4 +1,7 @@
 import asyncio
+
+import json
+from app.main.response import HTTPRequestException
 import torch
 from datasets import Dataset
 from ragas import evaluate
@@ -19,6 +22,7 @@ from ragas.metrics import (
 import requests
 from ..constant.llm import FRONTEND_SERVER_EVALUATE_URL
 import math
+import numpy as np
 
 os.environ["OPIK_API_KEY"] = os.getenv('OPIK_API_KEY')
 os.environ["OPIK_WORKSPACE"] = os.getenv('OPIK_WORKSPACE')
@@ -50,13 +54,31 @@ EVALUATION_METRICS = [
 
 print("✅ [RAGAS Evaluator] Model is ready to use.")
 
-def sanitize_score(score):
+def sanitize_score(ragas_output):
+    """
+    Membersihkan output dari RAGAS.
+    1. Membuka list jika nilainya dibungkus list.
+    2. Mengubah tipe data numpy jadi float biasa.
+    3. Mengubah nilai aneh (nan, inf) jadi None.
+    """
     try:
-        score = float(score)
-        if not math.isfinite(score):
+        # Langkah 1: Cek apakah outputnya list, kalo iya, ambil elemen pertamanya
+        if isinstance(ragas_output, list) and len(ragas_output) > 0:
+            score = ragas_output[0]
+        else:
+            score = ragas_output
+        
+        # Langkah 2: Cek kalo itu tipe numpy, ubah jadi float Python
+        if isinstance(score, (np.float64, np.float32)):
+            score = float(score)
+
+        # Langkah 3: Cek kalo skornya valid (bukan nan atau infinity)
+        if score is None or not isinstance(score, (int, float)) or not math.isfinite(score):
             return None
+        
         return score
-    except:
+    except Exception:
+        # Kalo ada error apa pun pas ngebersihin, balikin None aja biar aman
         return None
 
 # ==========================================================
@@ -88,27 +110,34 @@ def evaluate_single_turn_rag(message_id: str, question: str, answer: str, contex
         )
        
         print(f"\n[RAGAS Evaluator] Evaluation Complete:\n{eval_result}\n")
+        
+        scores_payload = {
+            "faithfulness": sanitize_score(eval_result['faithfulness_with_hhem']),
+            "answer_relevancy": sanitize_score(eval_result['answer_relevancy']),
+            "context_precision": sanitize_score(eval_result['llm_context_precision_without_reference']),
+            "context_relevance": sanitize_score(eval_result['nv_context_relevance'])
+        }
 
-        # scores_payload = {
-        #     "faithfulness": sanitize_score(eval_result['faithfulness']),
-        #     "answer_relevancy": sanitize_score(eval_result['answer_relevancy']),
-        #     "context_precision": sanitize_score(eval_result['llm_context_precision_without_reference']),
-        #     "context_relevance": sanitize_score(eval_result['nv_context_relevance'])
-        # }
+        print("[DEBUG] Payload yg dikirim ke frontend:")
+        print(json.dumps(scores_payload, indent=2))
 
-        # headers = {
-        #     "Content-Type": "application/json",
-        #     "x-internal-secret": os.getenv("INTERNAL_SECRET_KEY") 
-        # }
+        headers = {
+            "Content-Type": "application/json",
+            "x-internal-secret": os.getenv("INTERNAL_SECRET_KEY") 
+        }
 
-        # update_url = f"{FRONTEND_SERVER_EVALUATE_URL}{message_id}"
+        update_url = f"{FRONTEND_SERVER_EVALUATE_URL}{message_id}"
 
         # print("Skor mentah dari RAGAS:", eval_result)
         # print("Payload ke frontend:", scores_payload)
-        # print("Target URL:", update_url)
+        print("Target URL:", update_url)
 
-        # response = requests.patch(update_url, json=scores_payload, headers=headers, timeout=10)
-        # response.raise_for_status()
+        try:
+            response = requests.patch(update_url, json=scores_payload, headers=headers, timeout=10)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            print(f"[RAGAS Evaluator] ❌ ERROR SENDING TO FRONTEND: {e}")
+            raise HTTPRequestException(message=str(e), status_code=500)
 
 
     except Exception as e:
