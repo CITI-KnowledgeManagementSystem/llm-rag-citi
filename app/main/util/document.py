@@ -331,4 +331,3 @@ def mkdir_p(sftp, remote_directory):
         sftp.stat(remote_directory)
     except IOError:
         sftp.mkdir(remote_directory)
-

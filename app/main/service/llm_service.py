@@ -4,7 +4,7 @@ from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
 from ..util.llm import format_conversation_history, get_context
 from ..constant.llm import PROMPT_TEMPLATE
 from llama_index.core.llms import ChatMessage
-
+import asyncio
 
 async def question_answer(question: str, user_id: str, conversations_history: list,
                         #    background_tasks: BackgroundTasks,
@@ -107,3 +107,71 @@ async def question_answer(question: str, user_id: str, conversations_history: li
         print("ERROOOOORRRRRRRRRRRR", e)
         raise HTTPRequestException(message=str(e), status_code=500)
 
+
+def Streaming(question: str, user_id: str, conversations_history: list,
+                        hyde: bool = False, reranking: bool = False):
+    if not question or not user_id:
+        raise HTTPRequestException(message="Please provide both question & user_id", status_code=400)
+
+    try:
+
+        formatted_history = format_conversation_history(conversations_history if conversations_history else [])
+        if hyde:
+            context = asyncio.run(get_context(question)) # get_context harus synchronous atau di-await dengan cara lain
+        else:
+            context = question
+
+        print('context ==', context)
+
+        question_embeddings = document_to_embeddings(context)
+        private_documents = retrieve_documents_from_vdb(
+                                embeddings=question_embeddings["dense"],
+                                user_id=user_id,
+                                collection_name='private',
+                                reranking=reranking,
+                                query=question,
+                                sparse_embeddings=question_embeddings["sparse"]
+                            )
+        public_documents = retrieve_documents_from_vdb(
+                                embeddings=question_embeddings["dense"],
+                                collection_name='public',
+                                reranking=reranking,
+                                query=question,
+                                sparse_embeddings=question_embeddings["sparse"]
+                            )
+
+        private_docs_labeled = [{**doc['entity'], 'source': 'Private'} for doc in private_documents]
+        public_docs_labeled = [{**doc['entity'], 'source': 'Public'} for doc in public_documents]
+        all_documents = private_docs_labeled + public_docs_labeled
+
+        context_snippets = []
+        for doc in all_documents:
+            snippet = (
+                f"Sumber Informasi:\n"
+                f"  - Dokumen: {doc.get('document_name', 'N/A')}\n"
+                f"  - Halaman: {doc.get('page_number', 'N/A')}\n"
+                f"  - Koleksi: {doc.get('source', 'N/A')}\n"
+                f"Isi Kutipan:\n"
+                f"\"{doc.get('content', 'N/A')}\""
+            )
+            context_snippets.append(snippet)
+
+
+        final_context_string = "\n\n---\n\n".join(context_snippets)
+        messages = [
+            ChatMessage(role="system", content=PROMPT_TEMPLATE.format(context=final_context_string)),
+            ChatMessage(role="user", content=question)
+        ]
+        # 1. Streaming response dari LLM
+        streaming_response = generation_llm.stream_chat(messages)
+
+        # 2. Ambil ID dokumen yang relevan
+        retrieved_doc_ids = [doc.get('document_id') for doc in all_documents if doc.get('document_id')]
+
+        # 3. Kembalikan stream dan ID dokumen
+        # Kita tidak lagi mengembalikan 'final_answer' dari sini
+        return streaming_response, retrieved_doc_ids
+
+    except Exception as e:
+        print("ERROOOOORRRRRRRRRRRR", e)
+        raise HTTPRequestException(message=str(e), status_code=500)
