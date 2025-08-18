@@ -114,7 +114,7 @@ def split_documents(document_data):
 
 def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None, query:str=None, sparse_embeddings=None):
     collection = Collection(collection_name)
-    print('retrieving all documents from vdb: ', collection.num_entities)
+    # print('retrieving all documents from vdb: ', collection.num_entities)
     # params = {"metric_type": 'COSINE', "reranker": "jina-reranker-v1-base-en", "provider": "vllm", "queries": [query], "endpoint": "http://localhost:8080/v1/rerank"}
     base_params = {"metric_type": 'IP'}  # Use IP for hybrid search compatibility
 
@@ -174,8 +174,8 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                 output_fields=["document_id", "content", "document_name", "page_number"],
             )
             
-            print('========================== HYBRID SEARCH RESULTS ==============================')
-            print('hybrid_results', hybrid_results)
+            # print('========================== HYBRID SEARCH RESULTS ==============================')
+            # print('hybrid_results', hybrid_results)
             
             # Return the first (and usually only) result set from hybrid search
             return hybrid_results[0] if hybrid_results else []
@@ -329,4 +329,3 @@ def mkdir_p(sftp, remote_directory):
         sftp.stat(remote_directory)
     except IOError:
         sftp.mkdir(remote_directory)
-
