@@ -4,3 +4,4 @@ from ..controller.llm import *
 
 blueprint = Blueprint('llm', __name__, url_prefix='/llm')
 blueprint.route('/chat_with_llm', methods=['POST'])(chat_with_llm)
+blueprint.route('/evaluate', methods=['POST'])(evaluate_chat)

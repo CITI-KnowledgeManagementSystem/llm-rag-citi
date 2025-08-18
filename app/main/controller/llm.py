@@ -23,6 +23,14 @@ def chat_with_llm():
         llm_stream, retrieved_doc_ids = Streaming(
             question, user_id, conversation_history, hyde, reranking
         )
+        
+         response_payload = {
+            "answer": final_answer,
+            "retrieved_docs": all_documents  # <-- Kunci baru, isinya list dokumen
+        }
+        
+        # print("[Controller] Jawaban siap. Menjadwalkan evaluasi di background thread...")
+        retrieved_contexts_list = [doc.get('content', 'N/A') for doc in all_documents]
 
         # Buat sebuah "inner function" (generator) untuk format SSE
         def generate_chunks():
@@ -56,3 +64,26 @@ def chat_with_llm():
     except HTTPRequestException as e:
         semaphore.release() # Pastikan semaphore dilepas jika ada error di awal
         return e.to_response()
+
+def evaluate_chat():
+    try:
+        body = request.get_json()
+        message_id = body.get('message_id')
+        question = body.get('question')
+        answer = body.get('answer')
+        contexts = body.get('contexts')
+
+        # Validasi input...
+        if not all([message_id, question, answer, contexts]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        # Jalankan di background thread
+        eval_thread = threading.Thread(
+            target=evaluate_single_turn_rag,
+            args=(message_id, question, answer, contexts)
+        )
+        eval_thread.start()
+
+        return jsonify({"status": "Evaluation scheduled"}), 202
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
