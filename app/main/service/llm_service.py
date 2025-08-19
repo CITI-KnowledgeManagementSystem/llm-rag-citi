@@ -107,7 +107,6 @@ async def question_answer(question: str, user_id: str, conversations_history: li
         print("ERROOOOORRRRRRRRRRRR", e)
         raise HTTPRequestException(message=str(e), status_code=500)
 
-
 def Streaming(question: str, user_id: str, conversations_history: list,
                         hyde: bool = False, reranking: bool = False):
     if not question or not user_id:
@@ -144,6 +143,12 @@ def Streaming(question: str, user_id: str, conversations_history: list,
         public_docs_labeled = [{**doc['entity'], 'source': 'Public'} for doc in public_documents]
         all_documents = private_docs_labeled + public_docs_labeled
 
+
+        for doc in all_documents:
+            # Cek dulu kalo 'content' ada dan tipenya string, buat jaga-jaga
+            if 'content' in doc and isinstance(doc['content'], str):
+                # Ganti semua karakter " di dalem konten jadi \"
+                doc['content'] = doc['content'].replace('"', '\\"')
         context_snippets = []
         for doc in all_documents:
             snippet = (
@@ -166,11 +171,13 @@ def Streaming(question: str, user_id: str, conversations_history: list,
         streaming_response = generation_llm.stream_chat(messages)
 
         # 2. Ambil ID dokumen yang relevan
-        retrieved_doc_ids = [doc.get('document_id') for doc in all_documents if doc.get('document_id')]
+
+        retrieved_docs = all_documents  
 
         # 3. Kembalikan stream dan ID dokumen
         # Kita tidak lagi mengembalikan 'final_answer' dari sini
-        return streaming_response, retrieved_doc_ids
+        return streaming_response, retrieved_docs
+
 
     except Exception as e:
         print("ERROOOOORRRRRRRRRRRR", e)

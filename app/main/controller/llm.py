@@ -20,27 +20,26 @@ def chat_with_llm():
     print(hyde, reranking)
 
     try:
-        llm_stream, retrieved_doc_ids = Streaming(
+        llm_stream, retrieved_docs = Streaming(
             question, user_id, conversation_history, hyde, reranking
         )
         
-         response_payload = {
-            "answer": final_answer,
-            "retrieved_docs": all_documents  # <-- Kunci baru, isinya list dokumen
-        }
+        #  response_payload = {
+        #     "answer": final_answer,
+        #     "retrieved_docs": all_documents  # <-- Kunci baru, isinya list dokumen
+        # }
         
         # print("[Controller] Jawaban siap. Menjadwalkan evaluasi di background thread...")
-        retrieved_contexts_list = [doc.get('content', 'N/A') for doc in all_documents]
+        retrieved_contexts_list = [doc.get('content', 'N/A') for doc in retrieved_docs]
 
         # Buat sebuah "inner function" (generator) untuk format SSE
         def generate_chunks():
             try:
                 # 1. Kirim ID dokumen sebagai event pertama (opsional, tapi berguna!)
                 # Ini memastikan frontend tahu sumbernya sebelum jawaban muncul
-                doc_ids_payload = json.dumps({"retrieved_doc_ids": retrieved_doc_ids})
-                print("DEBUG: Dokumen ID yang ditemukan sebelum streaming:", retrieved_doc_ids)
-                yield f"data: {doc_ids_payload}\n\n"
-
+                for doc in retrieved_docs:
+                    doc_payload = json.dumps({"retrieved_doc": doc})
+                    yield f"data: {doc_payload}\n\n"
                 # 2. Loop melalui stream dari LLM
                 for chunk in llm_stream:
                     # 'chunk.delta' berisi potongan teks baru
@@ -58,7 +57,7 @@ def chat_with_llm():
                 print(f"Error during streaming: {e}")
             finally:
                 semaphore.release() # Pastikan semaphore dilepas di akhir stream
-
+                
         return Response(stream_with_context(generate_chunks()), mimetype='text/event-stream')
 
     except HTTPRequestException as e:
