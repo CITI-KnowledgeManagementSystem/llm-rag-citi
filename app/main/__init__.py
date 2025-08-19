@@ -10,7 +10,6 @@ from llama_index.llms.ollama import Ollama
 # from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from .util.embedding import CustomAPIEmbeddings
-import torch
 import threading
 
 from .config import config_by_name

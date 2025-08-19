@@ -1,55 +1,69 @@
-from flask import request, jsonify
-from ..service.llm_service import question_answer
+from flask import request, jsonify, Response, stream_with_context
+from ..service.llm_service import question_answer, Streaming
 from ..service.evaluate import evaluate_single_turn_rag
 import threading
 from ..response import HTTPRequestException, HTTPRequestSuccess
 from ...main import semaphore
 import json
 
-async def chat_with_llm():
+def chat_with_llm():    
     semaphore.acquire()
     body = request.get_json()
     question = body.get('question')
-    conversation_history = json.loads(body.get('conversation_history'))
+    conversation_history = body.get('conversation_history')
     hyde = body.get('hyde')
     hyde = True if hyde == 'true' else False
     reranking = body.get('reranking')
     reranking = True if reranking == 'true' else False
-    user_id = body.get('user_id')
-    # print(body)
-    # print(hyde, reranking)
+    user_id = body.get('userId')
+    print(body)
+    print(hyde, reranking)
 
     try:
-        # Panggil service lo seperti biasa untuk dapet jawaban
-        print("[Controller] Request chat dengan LLM...")
-        final_answer, all_documents = await question_answer(
+        llm_stream, retrieved_docs = Streaming(
             question, user_id, conversation_history, hyde, reranking
         )
-        response_payload = {
-            "answer": final_answer,
-            "retrieved_docs": all_documents  # <-- Kunci baru, isinya list dokumen
-        }
+        
+        #  response_payload = {
+        #     "answer": final_answer,
+        #     "retrieved_docs": all_documents  # <-- Kunci baru, isinya list dokumen
+        # }
         
         # print("[Controller] Jawaban siap. Menjadwalkan evaluasi di background thread...")
-        retrieved_contexts_list = [doc.get('content', 'N/A') for doc in all_documents]
-        
-        # Bikin thread baru
-        # eval_thread = threading.Thread(
-        #     target=evaluate_single_turn_rag, # <-- Targetnya fungsi SYNC
-        #     args=(question, final_answer, retrieved_contexts_list) # <-- Argumennya
-        # )
-        
-        # # Suruh thread-nya mulai kerja (Fire and Forget)
-        # eval_thread.start()
+        retrieved_contexts_list = [doc.get('content', 'N/A') for doc in retrieved_docs]
 
-        # Controller langsung kirim jawaban ke user
-        return HTTPRequestSuccess(message="Success", status_code=200, payload=response_payload).to_response() 
+        # Buat sebuah "inner function" (generator) untuk format SSE
+        def generate_chunks():
+            try:
+                # 1. Kirim ID dokumen sebagai event pertama (opsional, tapi berguna!)
+                # Ini memastikan frontend tahu sumbernya sebelum jawaban muncul
+                for doc in retrieved_docs:
+                    doc_payload = json.dumps({"retrieved_doc": doc})
+                    yield f"data: {doc_payload}\n\n"
+                # 2. Loop melalui stream dari LLM
+                for chunk in llm_stream:
+                    # 'chunk.delta' berisi potongan teks baru
+                    token = chunk.delta
+                    if token:
+                        # Kirim setiap token dalam format Server-Sent Events (SSE)
+                        # Format "data: [your_data]\n\n" adalah standar SSE
+                        data_payload = json.dumps({"answer_token": token})
+                        yield f"data: {data_payload}\n\n"
+                
+                # Opsional: Kirim sinyal bahwa stream sudah selesai
+                yield f"data: [DONE]\n\n"
+
+            except Exception as e:
+                print(f"Error during streaming: {e}")
+            finally:
+                semaphore.release() # Pastikan semaphore dilepas di akhir stream
+
+        return Response(stream_with_context(generate_chunks()), mimetype='text/event-stream')
 
     except HTTPRequestException as e:
+        semaphore.release() # Pastikan semaphore dilepas jika ada error di awal
         return e.to_response()
     
-    finally:
-        semaphore.release()
 
 def evaluate_chat():
     try:

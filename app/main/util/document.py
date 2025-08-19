@@ -47,8 +47,8 @@ def document_to_embeddings(content: str) -> List[float]:
     #         message=str(e),
     #         status_code=getattr(e.response, 'status_code', 500) if hasattr(e, 'response') else 500
     #     )
-
-
+# from app.main.util.demo.demo import parse_doc
+# from llama_index.core.schema import Document
 def read_file(file_path:str, tag:str):
     loader = DOCUMENT_READERS[tag]
     if tag in ['pdf', 'md',  'html', 'htm', 'ipynb', 
@@ -62,6 +62,25 @@ def read_file(file_path:str, tag:str):
     elif tag in ['csv', 'xlsx', 'xls']:
         loader_cls = loader()
         return loader_cls.load_data(file_path)
+
+#     contents_list = parse_doc(
+#     path_list=[file_path],
+#     output_dir="output",
+#     lang="en",
+#     backend="pipeline",
+#     method="auto"
+# )
+    
+#     if contents_list:
+#         content_string = contents_list[0]
+        
+#         # INI KUNCINYA: Teks mentah dibungkus jadi objek Document
+#         document = Document(text=content_string, metadata={"source": file_path})
+        
+#         # Dibalikin sebagai list, sesuai format LlamaIndex
+#         return [document]
+
+    
 
 
 def split_documents(document_data):

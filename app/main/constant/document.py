@@ -9,7 +9,7 @@ from llama_index.readers.file import (
     ImageReader,
     IPYNBReader
 )
-
+from llama_index.readers.docling import DoclingReader
 import os
 
 
