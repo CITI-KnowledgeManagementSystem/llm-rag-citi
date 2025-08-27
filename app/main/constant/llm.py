@@ -116,7 +116,6 @@ Generate a podcast script that covers the main points from the content in a conv
 """
 
 MODEL = "gpt-4-turbo"
-# MODEL = "gpt-4o"
 N_HYDE_INSTANCE = 1
 TEMPERATURE = 0.01
 IS_STREAM = False

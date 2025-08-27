@@ -165,11 +165,12 @@ def Streaming(question: str, user_id: str, conversations_history: list,
         final_context_string = "\n\n---\n\n".join(context_snippets)
         messages = [
             ChatMessage(role="system", content=PROMPT_TEMPLATE.format(context=final_context_string)),
+            *formatted_history,
             ChatMessage(role="user", content=question)
         ]
         # 1. Streaming response dari LLM
-        streaming_response = generation_llm.stream_chat(messages)
-
+        streaming_response = generation_llm.stream_chat(messages) 
+        
         # 2. Ambil ID dokumen yang relevan
 
         retrieved_docs = all_documents  
