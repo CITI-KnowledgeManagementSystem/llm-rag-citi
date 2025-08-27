@@ -5,11 +5,11 @@ from llama_index.core import Settings
 # from langchain_openai import ChatOpenAI
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.ollama import Ollama
-# from sentence_transformers import SentenceTransformer
-# from langchain_community.embeddings import HuggingFaceEmbeddings
-# from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from .util.embedding import CustomAPIEmbeddings
+from llama_index.agent.openai import OpenAIAgent
+# from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.tools.duckduckgo import DuckDuckGoSearchToolSpec
 import threading
 
 from .config import config_by_name
@@ -84,6 +84,17 @@ generation_llm = OpenAI(
     temperature=TEMPERATURE,
     api_key="test",
     max_tokens=MAX_TOKENS,
+)
+
+ddg_spec = DuckDuckGoSearchToolSpec()
+
+# Kita bikin agent-nya.
+# Dia punya otak (llm) dan tangan (tools) buat kerja.
+# verbose=True biar kita bisa liat di console agent-nya lagi ngapain, bagus buat debugging.
+agent = OpenAIAgent.from_tools(
+    tools=ddg_spec.to_tool_list(),
+    llm=generation_llm,
+    verbose=True
 )
 
 # generation_llm = Ollama(
