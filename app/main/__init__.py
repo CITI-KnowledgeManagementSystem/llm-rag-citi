@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_cors import CORS
 from pymilvus import connections
@@ -13,14 +14,11 @@ from .util.embedding import CustomAPIEmbeddings
 import threading
 
 from .config import config_by_name
-from .constant.document import EMBEDDING_MODEL
 from .constant.llm import TEMPERATURE, MODEL, N_HYDE_INSTANCE, HYDE_LLM_URL, LLM_URL, MAX_TOKENS
 
 # embedding_model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True, device='cuda' if torch.cuda.is_available() else 'cpu')
 
-EMBEDDING_MODEL = "Alibaba-NLP/gte-large-en-v1.5"
-
-EMBEDDING_API_URL = "http://140.118.101.181:1234/embed"
+EMBEDDING_API_URL = os.getenv('EMBEDDING_URL')
 
 langchain_embedding_model = CustomAPIEmbeddings(api_url=EMBEDDING_API_URL)
 

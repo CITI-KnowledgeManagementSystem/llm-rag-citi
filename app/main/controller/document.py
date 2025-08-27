@@ -11,9 +11,10 @@ def insert_document_to_vdb():
     collection_name = body.get('collection_name')
     original_filename = body.get('original_filename')
     change = body.get('change', False)
+    parser = body.get('parser')
     
     try:
-        insert_doc(str(document_id), user_id, tag, collection_name, original_filename, change)
+        insert_doc(str(document_id), user_id, tag, collection_name, original_filename, change, parser)
         return HTTPRequestSuccess(message="Document has been added", status_code=201).to_response()
     
     except HTTPRequestException as e:

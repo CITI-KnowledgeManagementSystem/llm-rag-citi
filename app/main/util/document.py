@@ -5,11 +5,13 @@ import os
 from pymilvus import AnnSearchRequest, Function, FunctionType, WeightedRanker
 import paramiko
 from llama_index.core import Settings
-from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL, DOCUMENT_DIR
+from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS_PYMU, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL, DOCUMENT_DIR, DOCUMENT_READERS_DOCLING
 # from ...main import embedding_model
 from ..response import HTTPRequestException
 from ...main import langchain_embedding_model
-
+from app.main.util.demo.demo import parse_doc
+from llama_index.core.schema import Document
+import re
 # import requests
 
 from typing import List
@@ -28,29 +30,26 @@ def check_document_exists(document_path:str) -> bool:
 
 def document_to_embeddings(content: str) -> List[float]:
     return langchain_embedding_model.embed_with_hybrid_support(content)
-    # try:
-    #     response = requests.post(
-    #         "http://140.118.101.181:1234/embed",
-    #         json={"content": content},  # Send as proper JSON object
-    #         timeout=30  # Add reasonable timeout
-    #     )
-        
-    #     if response.status_code == 200:
-    #         return response.json()["embeddings"]
-    #     else:
-    #         raise HTTPRequestException(
-    #             message=response.json().get("detail", "Failed to get embeddings"),
-    #             status_code=response.status_code
-    #         )
-    # except requests.exceptions.RequestException as e:
-    #     raise HTTPRequestException(
-    #         message=str(e),
-    #         status_code=getattr(e.response, 'status_code', 500) if hasattr(e, 'response') else 500
-    #     )
-# from app.main.util.demo.demo import parse_doc
-# from llama_index.core.schema import Document
-def read_file(file_path:str, tag:str):
-    loader = DOCUMENT_READERS[tag]
+
+def clean_text(text: str) -> str:
+    """Membersihkan teks dari karakter aneh dan spasi berlebih."""
+    # Menghilangkan spasi berlebih di awal dan akhir
+    cleaned = text.strip()
+    # Menghapus kode LaTeX atau karakter math yang diapit "$"
+    cleaned = re.sub(r'\$[^\$]*\$', '', cleaned)
+    return cleaned
+
+def clean_text(text: str) -> str:
+    """Membersihkan teks dari karakter aneh dan spasi berlebih."""
+    # Menghilangkan spasi berlebih di awal dan akhir
+    cleaned = text.strip()
+    # Menghapus kode LaTeX atau karakter math yang diapit "$"
+    cleaned = re.sub(r'\$[^\$]*\$', '', cleaned)
+    return cleaned
+
+def read_file(file_path:str, tag:str, parser:str="pymu"):
+    loader = DOCUMENT_READERS_DOCLING if parser == "docling" else DOCUMENT_READERS_PYMU
+    loader = loader[tag]
     if tag in ['pdf', 'md',  'html', 'htm', 'ipynb', 
                'jpg', 'jpeg', 'png', 'bmp', 'tiff']:
         loader_cls = loader()
@@ -62,25 +61,42 @@ def read_file(file_path:str, tag:str):
     elif tag in ['csv', 'xlsx', 'xls']:
         loader_cls = loader()
         return loader_cls.load_data(file_path)
-
-#     contents_list = parse_doc(
-#     path_list=[file_path],
-#     output_dir="output",
-#     lang="en",
-#     backend="pipeline",
-#     method="auto"
-# )
     
-#     if contents_list:
-#         content_string = contents_list[0]
-        
-#         # INI KUNCINYA: Teks mentah dibungkus jadi objek Document
-#         document = Document(text=content_string, metadata={"source": file_path})
-        
-#         # Dibalikin sebagai list, sesuai format LlamaIndex
-#         return [document]
+def read_file_mineru(file_path:str, tag:str, parser:str="mineru"):
 
+    contents_list = parse_doc(
+        path_list=[file_path],
+        output_dir="output",
+        lang="en",
+        backend="pipeline",
+        method="auto"
+    )
     
+    parsed_items = contents_list[0]
+    
+    # Siapin 'keranjang' buat nampung banyak Document
+    documents = []
+
+    for item in parsed_items:
+        text_chunk = item.get("text", "")
+        page_number = item.get("page_idx", -1) # -1 artinya halaman gak ketemu
+
+        cleaned_text = clean_text(text_chunk)
+       
+        if not cleaned_text:
+            continue
+
+        # Bikin satu Document buat tiap chunk teks
+        doc = Document(
+            text=cleaned_text,
+            # METADATA SEKARANG ADA NOMOR HALAMANNYA!
+            metadata={
+                "file_path": file_path,
+                "source": page_number + 1 # page_idx mulai dari 0, kita jadiin 1
+            }
+        )
+        documents.append(doc)
+    return documents
 
 
 def split_documents(document_data):

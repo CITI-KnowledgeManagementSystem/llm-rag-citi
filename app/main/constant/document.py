@@ -20,7 +20,7 @@ ACCEPTED_FILES = ['pdf', 'txt', 'md', 'docx', 'pptx', 'csv', 'xlsx', 'json', 'ip
 #     'txt': TextLoader,
 #     'md': UnstructuredMarkdownLoader
 # }
-DOCUMENT_READERS = {
+DOCUMENT_READERS_PYMU = {
     # Document formats
     'pdf': PyMuPDFReader,
     'txt': SimpleDirectoryReader,
@@ -47,6 +47,35 @@ DOCUMENT_READERS = {
     'bmp': ImageReader,
     'tiff': ImageReader
 }
+
+DOCUMENT_READERS_DOCLING = {
+    # Document formats
+    'pdf': DoclingReader,
+    'txt': DoclingReader,
+    'md': DoclingReader,
+    'docx': DoclingReader,
+    'doc': SimpleDirectoryReader,  # Older Word documents
+    'pptx': DoclingReader,
+    'ppt': SimpleDirectoryReader,  # Older PowerPoint presentations
+    
+    # Data formats
+    'csv': DoclingReader,
+    'xlsx': DoclingReader,
+    'xls': PandasExcelReader,  # Older Excel format
+    
+    # Programming files
+    'ipynb': IPYNBReader,
+    'py': SimpleDirectoryReader,
+    'json': DoclingReader,
+    
+    # Image formats (if you want OCR capability)
+    'jpg': ImageReader,
+    'jpeg': ImageReader,
+    'png': ImageReader,
+    'bmp': ImageReader,
+    'tiff': ImageReader
+}
+
 EMBEDDING_MODEL = "Alibaba-NLP/gte-large-en-v1.5"
 CHUNK_SIZE = 512
 CHUNK_OVERLAP = 10 
