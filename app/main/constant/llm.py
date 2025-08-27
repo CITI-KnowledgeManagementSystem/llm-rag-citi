@@ -107,8 +107,8 @@ QUESTION/TOPIC: {question}
 Generate a podcast script that covers the main points from the content in a conversational format:
 """
 
-# MODEL = "gpt-4-turbo"
-MODEL = "gpt-4o"
+MODEL = "gpt-4-turbo"
+# MODEL = "gpt-4"
 N_HYDE_INSTANCE = 1
 TEMPERATURE = 0.01
 IS_STREAM = False
