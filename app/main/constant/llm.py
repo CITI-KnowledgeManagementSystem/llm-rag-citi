@@ -107,6 +107,13 @@ QUESTION/TOPIC: {question}
 Generate a podcast script that covers the main points from the content in a conversational format:
 """
 
+TITLE_PROMPT_TEMPLATE = """
+Generate a concise and relevant title (maximum 5 words) for the following user query. 
+Only return the title itself, without any preamble, explanation, or quotation marks.
+
+User Query: "{prompt_text}"
+"""
+
 # MODEL = "gpt-4-turbo"
 MODEL = "gpt-4o"
 N_HYDE_INSTANCE = 1
