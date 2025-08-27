@@ -3,6 +3,7 @@ from ..service.document_service import *
 from ..response import HTTPRequestException, HTTPRequestSuccess
 
 
+
 def insert_document_to_vdb():
     body = request.get_json()
     document_id = body.get('document_id')
@@ -51,16 +52,22 @@ def check_document_exist_in_vdb():
         return e.to_response()
     
 async def create_mind_map():  
-    # body = request.get_json()
-    cot = True
-    file_path = DOCUMENT_DIR + '/Test Ragas Input.pdf'
-    tag = 'pdf'
-    # user_id = body.get('user_id')
     
-    print(file_path, tag)
+    body = request.get_json()
+    document_id = body.get('document_id')
+    user_id = body.get('user_id')
+    tag = body.get('tag')
+    collection_name = body.get('collection_name')
     
+    # =========== test ==============
+    
+    # document_id = "1"
+    # user_id = "user_2yfckZL2Y68NPUyEMOMy456sBWD"
+    # tag = "docx"
+    # collection_name = "private"
+
     try:
-        res = await mind_map(file_path, tag)
+        res = await mind_map(document_id, user_id, tag, collection_name)
         output_file = "mindmap_output.html"
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(res)

@@ -300,6 +300,8 @@ def retrieve_documents_from_sftp(user_id:str, document_id:str, tag:str, collecti
     document_path = os.path.join(DOCUMENT_DIR, document_id + '.' + tag)
     
     print(document_path, collection_name)
+    print(f"ini sftp file private: {os.getenv('QNAP_SFTP_PRIVATE_DIR')}/{user_id}/{document_id}.{tag}")
+    print(f"ini sftp file public: {os.getenv('QNAP_SFTP_PUBLIC_DIR')}/{user_id}/{document_id}.{tag}")
 
     try:
         with sftp_client.open_sftp() as sftp_client:
@@ -364,4 +366,3 @@ def mkdir_p(sftp, remote_directory):
         sftp.stat(remote_directory)
     except IOError:
         sftp.mkdir(remote_directory)
-

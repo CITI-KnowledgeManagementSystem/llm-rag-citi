@@ -57,13 +57,12 @@ def chat_with_llm():
                 print(f"Error during streaming: {e}")
             finally:
                 semaphore.release() # Pastikan semaphore dilepas di akhir stream
-
+                
         return Response(stream_with_context(generate_chunks()), mimetype='text/event-stream')
 
     except HTTPRequestException as e:
         semaphore.release() # Pastikan semaphore dilepas jika ada error di awal
         return e.to_response()
-    
 
 def evaluate_chat():
     try:
