@@ -147,11 +147,23 @@ def split_documents(document_data):
     
 #     return res[0]
 
-def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None, query:str=None, sparse_embeddings=None):
+def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None, query:str=None, sparse_embeddings=None, document_ids: list[str] = None):
     collection = Collection(collection_name)
-    # print('retrieving all documents from vdb: ', collection.num_entities)
-    # params = {"metric_type": 'COSINE', "reranker": "jina-reranker-v1-base-en", "provider": "vllm", "queries": [query], "endpoint": "http://localhost:8080/v1/rerank"}
     base_params = {"metric_type": 'IP'}  # Use IP for hybrid search compatibility
+
+    filters = []
+
+    # Kalo private, tambahin filter user_id
+    if collection_name == 'private' and user_id:
+        filters.append(f"user_id == '{user_id}'")
+    
+    # Kalo ada list document_ids, tambahin juga filternya
+    if document_ids:
+        formatted_ids = ", ".join([f"'{id_}'" for id_ in document_ids])
+        filters.append(f"document_id in [{formatted_ids}]")
+
+    # Gabungin semua filter jadi satu string
+    filter_expression = " and ".join(filters)
 
     if reranking:
         if not query:
@@ -167,8 +179,8 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             "param": base_params
         }
         
-        if collection_name == 'private': 
-            dense_search_params["expr"] = f"user_id == '{user_id}'"
+        if filter_expression:
+            dense_search_params["expr"] = filter_expression
             
         # Create sparse vector search request  
         sparse_search_params = {
@@ -178,8 +190,8 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             "param": {"metric_type": "IP"}  # Sparse vectors typically use Inner Product
         }
         
-        if collection_name == 'private': 
-            sparse_search_params["expr"] = f"user_id == '{user_id}'"
+        if filter_expression:
+            sparse_search_params["expr"] = filter_expression
     
         # Create AnnSearchRequest objects
         dense_req = AnnSearchRequest(**dense_search_params)
@@ -236,23 +248,20 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                 # Final fallback: Dense search only
                 print("Falling back to dense search only...")
                 
-                if collection_name == 'private':
-                    fallback_results = collection.search(
-                        data=[embeddings],
-                        anns_field='vector',
-                        param=base_params,
-                        limit=NUMBER_RETRIEVAL,
-                        expr=f"user_id == '{user_id}'",
-                        output_fields=["document_id", "content","document_name", "page_number"]
-                    )
-                else:
-                    fallback_results = collection.search(
-                        data=[embeddings],
-                        anns_field='vector',
-                        param=base_params,
-                        limit=NUMBER_RETRIEVAL,
-                        output_fields=["document_id", "content","document_name", "page_number"]
-                    )
+                fallback_search_params = {
+                    "data": [embeddings],
+                    "anns_field": 'vector',
+                    "param": base_params,
+                    "limit": NUMBER_RETRIEVAL,
+                    "output_fields": ["document_id", "content", "document_name", "page_number"]
+                }
+
+                # 2. Tambahin 'expr' secara kondisional ke dictionary itu
+                if filter_expression:
+                    fallback_search_params["expr"] = filter_expression
+
+                # 3. Tembak query sekali aja pake parameter yang udah disiapin
+                fallback_results = collection.search(**fallback_search_params)
                 return fallback_results[0] if fallback_results else []
             
     else:
