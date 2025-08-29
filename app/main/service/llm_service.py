@@ -3,7 +3,7 @@ from ...main import generation_llm
 # , agent
 from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
 from ..util.llm import format_conversation_history, get_context
-from ..constant.llm import PROMPT_TEMPLATE, NEW_PROMPT_TEMPLATE
+from ..constant.llm import PROMPT_TEMPLATE, TITLE_PROMPT_TEMPLATE, NEW_PROMPT_TEMPLATE
 from llama_index.core.llms import ChatMessage
 import asyncio
 
@@ -89,6 +89,30 @@ def Streaming(question: str, user_id: str, conversations_history: list, document
     except Exception as e:
         print("ERROOOOORRRRRRRRRRRR", e)
         raise HTTPRequestException(message=str(e), status_code=500)
+
+async def generate_title(prompt_text: str):
+    """
+    Generates a chat title based on the user's initial prompt.
+    """
+    if not prompt_text:
+        raise HTTPRequestException(message="Prompt text cannot be empty", status_code=400)
+
+    prompt = TITLE_PROMPT_TEMPLATE
+    
+    try:
+        # Panggil LLM dengan prompt yang sudah diformat
+        response = await generation_llm.acomplete(prompt.format(prompt_text=prompt_text))
+        
+        # Bersihkan output dari LLM (hapus spasi ekstra atau kutip)
+        generated_title = response.text.strip().strip('"')
+        
+        print(f"Generated Title: {generated_title}")
+        return generated_title
+        
+    except Exception as e:
+        raise HTTPRequestException(message=f"Failed to generate title: {str(e)}", status_code=500)
+
+
     
     
 async def agent_search(question: str, user_id: str, conversations_history: list,

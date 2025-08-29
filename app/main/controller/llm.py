@@ -1,5 +1,5 @@
 from flask import request, jsonify, Response, stream_with_context
-from ..service.llm_service import Streaming, agent_search
+from ..service.llm_service import question_answer, Streaming, generate_title
 from ..service.evaluate import evaluate_single_turn_rag
 import threading
 from ..response import HTTPRequestException, HTTPRequestSuccess
@@ -63,6 +63,25 @@ def chat_with_llm():
         semaphore.release() # Pastikan semaphore dilepas jika ada error di awal
         return e.to_response()
 
+
+async def create_title():  
+    body = request.get_json()
+    prompt = body.get('prompt')
+
+    try:
+        # Panggil service yang baru kita buat
+        title = await generate_title(prompt)
+        
+        # Kirim response sukses dengan payload berisi judul
+        return HTTPRequestSuccess(
+            message="Title generated successfully", 
+            status_code=200, 
+            payload={"title": title}
+        ).to_response()
+    
+    except HTTPRequestException as e:
+        print(e.message)
+        return e.to_response()
 
 def evaluate_chat():
     try:
