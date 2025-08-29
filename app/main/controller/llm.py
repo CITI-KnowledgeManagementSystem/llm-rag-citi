@@ -16,21 +16,20 @@ def chat_with_llm():
     reranking = body.get('reranking')
     reranking = True if reranking == 'true' else False
     user_id = body.get('userId')
+    document_ids = body.get('document_ids', None)  # Bisa None atau list of strings
     print(body)
     print(hyde, reranking)
 
     try:
         llm_stream, retrieved_docs = Streaming(
-            question, user_id, conversation_history, hyde, reranking
+            question=question, 
+            user_id=user_id, 
+            conversations_history=conversation_history, 
+            document_ids=document_ids,
+            hyde=hyde, 
+            reranking=reranking
         )
         
-        #  response_payload = {
-        #     "answer": final_answer,
-        #     "retrieved_docs": all_documents  # <-- Kunci baru, isinya list dokumen
-        # }
-        
-        # print("[Controller] Jawaban siap. Menjadwalkan evaluasi di background thread...")
-        retrieved_contexts_list = [doc.get('content', 'N/A') for doc in retrieved_docs]
 
         # Buat sebuah "inner function" (generator) untuk format SSE
         def generate_chunks():
@@ -63,6 +62,7 @@ def chat_with_llm():
     except HTTPRequestException as e:
         semaphore.release() # Pastikan semaphore dilepas jika ada error di awal
         return e.to_response()
+
 
 async def create_title():  
     body = request.get_json()

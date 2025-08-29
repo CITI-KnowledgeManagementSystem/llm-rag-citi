@@ -5,11 +5,13 @@ import os
 from pymilvus import AnnSearchRequest, Function, FunctionType, WeightedRanker
 import paramiko
 from llama_index.core import Settings
-from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL, DOCUMENT_DIR
+from ..constant.document import ACCEPTED_FILES, DOCUMENT_READERS_PYMU, CHUNK_SIZE, CHUNK_OVERLAP, NUMBER_RETRIEVAL, DOCUMENT_DIR, DOCUMENT_READERS_DOCLING
 # from ...main import embedding_model
 from ..response import HTTPRequestException
 from ...main import langchain_embedding_model
-
+from app.main.util.demo.demo import parse_doc
+from llama_index.core.schema import Document
+import re
 # import requests
 
 from typing import List
@@ -28,29 +30,26 @@ def check_document_exists(document_path:str) -> bool:
 
 def document_to_embeddings(content: str) -> List[float]:
     return langchain_embedding_model.embed_with_hybrid_support(content)
-    # try:
-    #     response = requests.post(
-    #         "http://140.118.101.181:1234/embed",
-    #         json={"content": content},  # Send as proper JSON object
-    #         timeout=30  # Add reasonable timeout
-    #     )
-        
-    #     if response.status_code == 200:
-    #         return response.json()["embeddings"]
-    #     else:
-    #         raise HTTPRequestException(
-    #             message=response.json().get("detail", "Failed to get embeddings"),
-    #             status_code=response.status_code
-    #         )
-    # except requests.exceptions.RequestException as e:
-    #     raise HTTPRequestException(
-    #         message=str(e),
-    #         status_code=getattr(e.response, 'status_code', 500) if hasattr(e, 'response') else 500
-    #     )
-# from app.main.util.demo.demo import parse_doc
-# from llama_index.core.schema import Document
-def read_file(file_path:str, tag:str):
-    loader = DOCUMENT_READERS[tag]
+
+def clean_text(text: str) -> str:
+    """Membersihkan teks dari karakter aneh dan spasi berlebih."""
+    # Menghilangkan spasi berlebih di awal dan akhir
+    cleaned = text.strip()
+    # Menghapus kode LaTeX atau karakter math yang diapit "$"
+    cleaned = re.sub(r'\$[^\$]*\$', '', cleaned)
+    return cleaned
+
+def clean_text(text: str) -> str:
+    """Membersihkan teks dari karakter aneh dan spasi berlebih."""
+    # Menghilangkan spasi berlebih di awal dan akhir
+    cleaned = text.strip()
+    # Menghapus kode LaTeX atau karakter math yang diapit "$"
+    cleaned = re.sub(r'\$[^\$]*\$', '', cleaned)
+    return cleaned
+
+def read_file(file_path:str, tag:str, parser:str="pymu"):
+    loader = DOCUMENT_READERS_DOCLING if parser == "docling" else DOCUMENT_READERS_PYMU
+    loader = loader[tag]
     if tag in ['pdf', 'md',  'html', 'htm', 'ipynb', 
                'jpg', 'jpeg', 'png', 'bmp', 'tiff']:
         loader_cls = loader()
@@ -62,25 +61,42 @@ def read_file(file_path:str, tag:str):
     elif tag in ['csv', 'xlsx', 'xls']:
         loader_cls = loader()
         return loader_cls.load_data(file_path)
-
-#     contents_list = parse_doc(
-#     path_list=[file_path],
-#     output_dir="output",
-#     lang="en",
-#     backend="pipeline",
-#     method="auto"
-# )
     
-#     if contents_list:
-#         content_string = contents_list[0]
-        
-#         # INI KUNCINYA: Teks mentah dibungkus jadi objek Document
-#         document = Document(text=content_string, metadata={"source": file_path})
-        
-#         # Dibalikin sebagai list, sesuai format LlamaIndex
-#         return [document]
+def read_file_mineru(file_path:str, tag:str, parser:str="mineru"):
 
+    contents_list = parse_doc(
+        path_list=[file_path],
+        output_dir="output",
+        lang="en",
+        backend="pipeline",
+        method="auto"
+    )
     
+    parsed_items = contents_list[0]
+    
+    # Siapin 'keranjang' buat nampung banyak Document
+    documents = []
+
+    for item in parsed_items:
+        text_chunk = item.get("text", "")
+        page_number = item.get("page_idx", -1) # -1 artinya halaman gak ketemu
+
+        cleaned_text = clean_text(text_chunk)
+       
+        if not cleaned_text:
+            continue
+
+        # Bikin satu Document buat tiap chunk teks
+        doc = Document(
+            text=cleaned_text,
+            # METADATA SEKARANG ADA NOMOR HALAMANNYA!
+            metadata={
+                "file_path": file_path,
+                "source": page_number + 1 # page_idx mulai dari 0, kita jadiin 1
+            }
+        )
+        documents.append(doc)
+    return documents
 
 
 def split_documents(document_data):
@@ -131,11 +147,23 @@ def split_documents(document_data):
     
 #     return res[0]
 
-def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None, query:str=None, sparse_embeddings=None):
+def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=False, user_id=None, query:str=None, sparse_embeddings=None, document_ids: list[str] = None):
     collection = Collection(collection_name)
-    # print('retrieving all documents from vdb: ', collection.num_entities)
-    # params = {"metric_type": 'COSINE', "reranker": "jina-reranker-v1-base-en", "provider": "vllm", "queries": [query], "endpoint": "http://localhost:8080/v1/rerank"}
     base_params = {"metric_type": 'IP'}  # Use IP for hybrid search compatibility
+
+    filters = []
+
+    # Kalo private, tambahin filter user_id
+    if collection_name == 'private' and user_id:
+        filters.append(f"user_id == '{user_id}'")
+    
+    # Kalo ada list document_ids, tambahin juga filternya
+    if document_ids:
+        formatted_ids = ", ".join([f"'{id_}'" for id_ in document_ids])
+        filters.append(f"document_id in [{formatted_ids}]")
+
+    # Gabungin semua filter jadi satu string
+    filter_expression = " and ".join(filters)
 
     if reranking:
         if not query:
@@ -151,8 +179,8 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             "param": base_params
         }
         
-        if collection_name == 'private': 
-            dense_search_params["expr"] = f"user_id == '{user_id}'"
+        if filter_expression:
+            dense_search_params["expr"] = filter_expression
             
         # Create sparse vector search request  
         sparse_search_params = {
@@ -162,8 +190,8 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
             "param": {"metric_type": "IP"}  # Sparse vectors typically use Inner Product
         }
         
-        if collection_name == 'private': 
-            sparse_search_params["expr"] = f"user_id == '{user_id}'"
+        if filter_expression:
+            sparse_search_params["expr"] = filter_expression
     
         # Create AnnSearchRequest objects
         dense_req = AnnSearchRequest(**dense_search_params)
@@ -220,23 +248,20 @@ def retrieve_documents_from_vdb(embeddings, collection_name:str, reranking:bool=
                 # Final fallback: Dense search only
                 print("Falling back to dense search only...")
                 
-                if collection_name == 'private':
-                    fallback_results = collection.search(
-                        data=[embeddings],
-                        anns_field='vector',
-                        param=base_params,
-                        limit=NUMBER_RETRIEVAL,
-                        expr=f"user_id == '{user_id}'",
-                        output_fields=["document_id", "content","document_name", "page_number"]
-                    )
-                else:
-                    fallback_results = collection.search(
-                        data=[embeddings],
-                        anns_field='vector',
-                        param=base_params,
-                        limit=NUMBER_RETRIEVAL,
-                        output_fields=["document_id", "content","document_name", "page_number"]
-                    )
+                fallback_search_params = {
+                    "data": [embeddings],
+                    "anns_field": 'vector',
+                    "param": base_params,
+                    "limit": NUMBER_RETRIEVAL,
+                    "output_fields": ["document_id", "content", "document_name", "page_number"]
+                }
+
+                # 2. Tambahin 'expr' secara kondisional ke dictionary itu
+                if filter_expression:
+                    fallback_search_params["expr"] = filter_expression
+
+                # 3. Tembak query sekali aja pake parameter yang udah disiapin
+                fallback_results = collection.search(**fallback_search_params)
                 return fallback_results[0] if fallback_results else []
             
     else:

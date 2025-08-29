@@ -5,6 +5,7 @@ from ...main import hyde_llm
 from ..constant.llm import HYDE_PROMPT_TEMPLATE
 
 from llama_index.core import PromptTemplate
+from llama_index.core.llms import ChatMessage
 
 # def get_context(question:str):
 #     prompt_template = HYDE_PROMPT_TEMPLATE    
@@ -27,16 +28,18 @@ def format_conversation_history(history:list):
     for message in history:
         if message["type"] == "request":
             new_hist.append(
-                {
-                    "role": "user",
-                    "content": message["message"]
-                }
+                # Ganti jadi objek ChatMessage
+                ChatMessage(
+                    role="user",
+                    content=message["message"]
+                )
             )
         else:
             new_hist.append(
-                {
-                    "role": "assistant",
-                    "content": message["message"]
-                }
+                # Ganti jadi objek ChatMessage
+                ChatMessage(
+                    role="assistant",
+                    content=message["message"]
+                )
             )
     return new_hist
