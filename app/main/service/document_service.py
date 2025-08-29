@@ -188,4 +188,6 @@ async def mind_map(document_id:str, user_id:str, tag:str, collection_name:str):
         
     except Exception as e:
         raise HTTPRequestException(message=f"Failed to generate mind map: {str(e)}", status_code=500)
+    
+
 

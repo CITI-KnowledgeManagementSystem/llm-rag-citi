@@ -41,3 +41,8 @@ tqdm
 transformers
 urllib3
 waitress
+mineru
+doclayout-yolo
+ultralytics
+rapid_table
+ftfy

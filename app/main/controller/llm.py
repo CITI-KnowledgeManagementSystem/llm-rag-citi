@@ -1,10 +1,12 @@
 from flask import request, jsonify, Response, stream_with_context
-from ..service.llm_service import question_answer, Streaming, agent_search
+from ..service.llm_service import question_answer, Streaming, agent_search, regenerate_mind_map_service
 from ..service.evaluate import evaluate_single_turn_rag
 import threading
 from ..response import HTTPRequestException, HTTPRequestSuccess
 from ...main import semaphore
 import json
+from llama_index.core.agent.workflow import AgentStream
+import asyncio
 
 def chat_with_llm():    
     semaphore.acquire()
@@ -65,7 +67,7 @@ def chat_with_llm():
         return e.to_response()
 
 
-# async def chat_with_llm():    
+# def chat_with_llm():    
 #     semaphore.acquire()
 #     body = request.get_json()
 #     question = body.get('question')
@@ -75,56 +77,42 @@ def chat_with_llm():
 #     user_id = body.get('userId')
 
 #     try:
-#         print(body)
-#         print(f"HyDE: {hyde}, Reranking: {reranking}")
-
-#         # Panggil service yang balikin generator dan dokumen
-#         llm_stream, retrieved_docs = await agent_search(
+#         # Panggil fungsi SINKRON kita yang baru
+#         llm_stream_generator, retrieved_docs = agent_search(
 #             question, user_id, conversation_history, hyde, reranking
 #         )
         
-#         # Kita bikin generator function buat ngirim data ke client
-#         def generate_stream():
+#         def generate_chunks():
 #             try:
-#                 print("Starting stream generation... sini boi")
-#                 # 1. Kirim source documents dulu sebagai event pertama
-#                 # Ini biar UI bisa nampilin sumbernya duluan
-#                 source_event = {
-#                     "sources": retrieved_docs
-#                 }
-#                 # Format Server-Sent Event (SSE): 'data: {json}\n\n'
+#                 # 1. Kirim dokumen dulu
+#                 source_event = {"sources": retrieved_docs}
 #                 yield f"data: {json.dumps(source_event)}\n\n"
+                
+#                 # 2. Loop melalui stream SINKRON dari agent
+#                 for event in llm_stream_generator:
+#                     # Pastiin event-nya tipe yang bener
+#                     if isinstance(event, AgentStream):
+#                         token = event.delta
+#                         if token:
+#                             data_payload = json.dumps({"answer_token": token})
+#                             yield f"data: {data_payload}\n\n"
+                
+#                 yield f"data: [DONE]\n\n"
 
-#                 # 2. Iterasi stream dari agent dan kirim token satu per satu
-#                 for delta in llm_stream.response_gen:
-#                     # Setiap delta adalah token baru
-#                     token_event = {
-#                         "token": delta
-#                     }
-#                     yield f"data: {json.dumps(token_event)}\n\n"
-            
 #             except Exception as e:
-#                 # Kalo ada error di tengah jalan streaming
-#                 print(f"Error during stream generation: {e}")
-#                 error_event = {
-#                     "error": "An error occurred during streaming."
-#                 }
-#                 yield f"data: {json.dumps(error_event)}\n\n"
+#                 print(f"Error during streaming generation: {e}")
+#             finally:
+#                 semaphore.release()
+                
+#         return Response(stream_with_context(generate_chunks()), mimetype='text/event-stream')
 
-#         # Balikin Response object dengan generator kita.
-#         # mimetype='text/event-stream' ini wajib buat streaming (SSE)
-#         return Response(generate_stream(), mimetype='text/event-stream')
-
-#         # return Response(llm_stream, mimetype='text/event-stream')
-
-#     except Exception as e:
-#         # Error handling sebelum streaming dimulai
-#         print(f"Error in chat_with_llm endpoint: {e}")
-#         return Response(json.dumps({'error': str(e)}), status=500, mimetype='application/json')
-    
-#     finally:
-#         # PENTING: Selalu release semaphore, gak peduli sukses atau gagal
+#     except HTTPRequestException as e:
 #         semaphore.release()
+#         return e.to_response()
+#     except Exception as e:
+#         # Fallback error handler
+#         semaphore.release()
+#         return Response(json.dumps({'error': str(e)}), status=500, mimetype='application/json')
 
 def evaluate_chat():
     try:
@@ -148,3 +136,31 @@ def evaluate_chat():
         return jsonify({"status": "Evaluation scheduled"}), 202
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+async def regenerate_mind_map():
+    body = request.get_json()
+    question = body.get('question')
+    # hyde = body.get('hyde')
+    # hyde = True if hyde == 'true' else False
+    # reranking = body.get('reranking')
+    # reranking = True if reranking == 'true' else False
+    user_id = body.get('user_id')
+    
+    # ====== Testing ======
+    # question = "make a mindmap about Cycling Learning Rate"
+    # user_id = "user_2yfckZL2Y68NPUyEMOMy456sBWD"
+    hyde = True
+    reranking = True
+    
+    try:
+        res = await regenerate_mind_map_service(
+            question, user_id, hyde, reranking
+        )
+        
+        print('res ==', res)
+        
+        return HTTPRequestSuccess(message="Mind map regenerated", status_code=200, payload=res).to_response()
+    
+    except HTTPRequestException as e:
+        print(e.message)
+        return e.to_response()
