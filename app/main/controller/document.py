@@ -68,11 +68,11 @@ async def create_mind_map():
 
     try:
         res = await mind_map(document_id, user_id, tag, collection_name)
-        output_file = "mindmap_output.html"
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(res)
+        # output_file = "mindmap_output.html"
+        # with open(output_file, "w", encoding="utf-8") as f:
+        #     f.write(res)
     
-        print(f"Mind map generated successfully: {output_file}")
+        # print(f"Mind map generated successfully: {output_file}")
         return HTTPRequestSuccess(message="Mind map created", status_code=200, payload=res).to_response()
     
     except HTTPRequestException as e:
