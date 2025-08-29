@@ -1,8 +1,10 @@
 from ..response import HTTPRequestException
-from ...main import generation_llm, agent
+from ...main import generation_llm
+# , agent
 from ..util.document import retrieve_documents_from_vdb, document_to_embeddings
 from ..util.llm import format_conversation_history, get_context
-from ..constant.llm import PROMPT_TEMPLATE, NEW_PROMPT_TEMPLATE, REGENERATE_MIND_MAP_PROMPT
+from ..constant.llm import PROMPT_TEMPLATE, NEW_PROMPT_TEMPLATE, REGENERATE_MIND_MAP_PROMPT, TITLE_PROMPT_TEMPLATE
+
 from llama_index.core.llms import ChatMessage
 from llama_index.core.agent.workflow import AgentStream
 
@@ -110,11 +112,11 @@ async def question_answer(question: str, user_id: str, conversations_history: li
         print("ERROOOOORRRRRRRRRRRR", e)
         raise HTTPRequestException(message=str(e), status_code=500)
 
-def Streaming(question: str, user_id: str, conversations_history: list,
+def Streaming(question: str, user_id: str, conversations_history: list, document_ids: list[str] = None,
                         hyde: bool = False, reranking: bool = False):
     if not question or not user_id:
         raise HTTPRequestException(message="Please provide both question & user_id", status_code=400)
-
+    
     try:
 
         formatted_history = format_conversation_history(conversations_history if conversations_history else [])
@@ -126,25 +128,31 @@ def Streaming(question: str, user_id: str, conversations_history: list,
         print('context ==', context)
 
         question_embeddings = document_to_embeddings(context)
-        private_documents = retrieve_documents_from_vdb(
-                                embeddings=question_embeddings["dense"],
-                                user_id=user_id,
-                                collection_name='private',
-                                reranking=reranking,
-                                query=question,
-                                sparse_embeddings=question_embeddings["sparse"]
-                            )
-        public_documents = retrieve_documents_from_vdb(
-                                embeddings=question_embeddings["dense"],
-                                collection_name='public',
-                                reranking=reranking,
-                                query=question,
-                                sparse_embeddings=question_embeddings["sparse"]
-                            )
+        all_documents = []
+        for collection in ['private', 'public']:
+            # Siapin argumen buat manggil fungsi, biar rapi
+            retrieval_params = {
+                "embeddings": question_embeddings["dense"],
+                "collection_name": collection,
+                "reranking": reranking,
+                "query": question,
+                "sparse_embeddings": question_embeddings["sparse"]
+            }
+            # Tambahin user_id HANYA kalo koleksinya 'private'
+            if collection == 'private':
+                retrieval_params["user_id"] = user_id
 
-        private_docs_labeled = [{**doc['entity'], 'source': 'Private'} for doc in private_documents]
-        public_docs_labeled = [{**doc['entity'], 'source': 'Public'} for doc in public_documents]
-        all_documents = private_docs_labeled + public_docs_labeled
+            if document_ids:
+                # Sintaks filter ini tergantung VDB lo, tapi konsepnya "WHERE document_id IN [...]"
+                retrieval_params['document_ids'] = document_ids
+            
+            # Panggil fungsi retrieve pake parameter yg udah disiapin
+            documents = retrieve_documents_from_vdb(**retrieval_params)
+            
+            # Langsung kasih label & masukin ke list utama
+            source_label = collection.capitalize() # Biar jadi 'Private' atau 'Public'
+            labeled_docs = [{**doc['entity'], 'source': source_label} for doc in documents]
+            all_documents.extend(labeled_docs)
 
 
         for doc in all_documents:
@@ -186,6 +194,30 @@ def Streaming(question: str, user_id: str, conversations_history: list,
     except Exception as e:
         print("ERROOOOORRRRRRRRRRRR", e)
         raise HTTPRequestException(message=str(e), status_code=500)
+
+async def generate_title(prompt_text: str):
+    """
+    Generates a chat title based on the user's initial prompt.
+    """
+    if not prompt_text:
+        raise HTTPRequestException(message="Prompt text cannot be empty", status_code=400)
+
+    prompt = TITLE_PROMPT_TEMPLATE
+    
+    try:
+        # Panggil LLM dengan prompt yang sudah diformat
+        response = await generation_llm.acomplete(prompt.format(prompt_text=prompt_text))
+        
+        # Bersihkan output dari LLM (hapus spasi ekstra atau kutip)
+        generated_title = response.text.strip().strip('"')
+        
+        print(f"Generated Title: {generated_title}")
+        return generated_title
+        
+    except Exception as e:
+        raise HTTPRequestException(message=f"Failed to generate title: {str(e)}", status_code=500)
+
+
     
     
 def agent_search(question: str, user_id: str, conversations_history: list,

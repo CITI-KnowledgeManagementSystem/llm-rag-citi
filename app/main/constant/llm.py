@@ -189,9 +189,18 @@ QUESTION/TOPIC: {question}
 Generate a podcast script that covers the main points from the content in a conversational format:
 """
 
+
+TITLE_PROMPT_TEMPLATE = """
+Generate a concise and relevant title (maximum 5 words) for the following user query. 
+Only return the title itself, without any preamble, explanation, or quotation marks.
+
+User Query: "{prompt_text}"
+"""
+
+# MODEL = "gpt-4-turbo"
 MODEL = "gpt-4-turbo"
 N_HYDE_INSTANCE = 1
 TEMPERATURE = 0.01
 IS_STREAM = False
-MAX_TOKENS = 1000
+MAX_TOKENS = 4096
 FRONTEND_SERVER_EVALUATE_URL = os.getenv('FRONTEND_SERVER_EVALUATE_URL')

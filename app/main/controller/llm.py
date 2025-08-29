@@ -1,5 +1,6 @@
 from flask import request, jsonify, Response, stream_with_context
-from ..service.llm_service import question_answer, Streaming, agent_search, regenerate_mind_map_service
+from ..service.llm_service import question_answer, Streaming, agent_search, regenerate_mind_map_service, generate_title
+
 from ..service.evaluate import evaluate_single_turn_rag
 import threading
 from ..response import HTTPRequestException, HTTPRequestSuccess
@@ -18,21 +19,20 @@ def chat_with_llm():
     reranking = body.get('reranking')
     reranking = True if reranking == 'true' else False
     user_id = body.get('userId')
+    document_ids = body.get('document_ids', None)  # Bisa None atau list of strings
     print(body)
     print(hyde, reranking)
 
     try:
         llm_stream, retrieved_docs = Streaming(
-            question, user_id, conversation_history, hyde, reranking
+            question=question, 
+            user_id=user_id, 
+            conversations_history=conversation_history, 
+            document_ids=document_ids,
+            hyde=hyde, 
+            reranking=reranking
         )
         
-        #  response_payload = {
-        #     "answer": final_answer,
-        #     "retrieved_docs": all_documents  # <-- Kunci baru, isinya list dokumen
-        # }
-        
-        # print("[Controller] Jawaban siap. Menjadwalkan evaluasi di background thread...")
-        # retrieved_contexts_list = [doc.get('content', 'N/A') for doc in retrieved_docs]
 
         # Buat sebuah "inner function" (generator) untuk format SSE
         def generate_chunks():
@@ -113,6 +113,25 @@ def chat_with_llm():
 #         # Fallback error handler
 #         semaphore.release()
 #         return Response(json.dumps({'error': str(e)}), status=500, mimetype='application/json')
+
+async def create_title():  
+    body = request.get_json()
+    prompt = body.get('prompt')
+
+    try:
+        # Panggil service yang baru kita buat
+        title = await generate_title(prompt)
+        
+        # Kirim response sukses dengan payload berisi judul
+        return HTTPRequestSuccess(
+            message="Title generated successfully", 
+            status_code=200, 
+            payload={"title": title}
+        ).to_response()
+    
+    except HTTPRequestException as e:
+        print(e.message)
+        return e.to_response()
 
 def evaluate_chat():
     try:

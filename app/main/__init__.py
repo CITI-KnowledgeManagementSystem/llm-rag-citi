@@ -10,8 +10,9 @@ from llama_index.embeddings.langchain import LangchainEmbedding
 from .util.embedding import CustomAPIEmbeddings
 # from llama_index.agent.openai import OpenAIAgent
 # from llama_index.core.agent.workflow import FunctionAgent
+
 from llama_index.core.agent.workflow import AgentWorkflow
-from llama_index.tools.duckduckgo import DuckDuckGoSearchToolSpec
+# from llama_index.tools.duckduckgo import DuckDuckGoSearchToolSpec
 import threading
 
 from .config import config_by_name
@@ -85,13 +86,24 @@ generation_llm = OpenAI(
     max_tokens=MAX_TOKENS,
 )
 
-ddg_spec = DuckDuckGoSearchToolSpec()
+# ddg_spec = DuckDuckGoSearchToolSpec()
 
-agent = AgentWorkflow.from_tools_or_functions(
-    tools_or_functions=ddg_spec.to_tool_list(),
-    llm=generation_llm,
-    verbose=True
-)
+
+# agent = AgentWorkflow.from_tools_or_functions(
+#     tools_or_functions=ddg_spec.to_tool_list(),
+#     llm=generation_llm,
+#     verbose=True
+# )
+
+# Kita bikin agent-nya.
+# Dia punya otak (llm) dan tangan (tools) buat kerja.
+# verbose=True biar kita bisa liat di console agent-nya lagi ngapain, bagus buat debugging.
+# agent = OpenAIAgent.from_tools(
+#     tools=ddg_spec.to_tool_list(),
+#     llm=generation_llm,
+#     verbose=True
+# )
+
 
 # agent = OpenAIAgent.from_tools(
 #     tools=ddg_spec.to_tool_list(),

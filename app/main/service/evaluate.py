@@ -15,7 +15,7 @@ from opik.integrations.langchain import OpikTracer
 from opik import track
 
 from ragas.metrics import (
-    FaithfulnesswithHHEM,
+    Faithfulness,
     answer_relevancy,
 )
 
@@ -43,7 +43,7 @@ ragas_embed_model = ragas_embed_model
 context_precision_metric = LLMContextPrecisionWithoutReference(llm=ragas_llm)
 context_relevancy_metric = ContextRelevance(llm=ragas_llm)
 
-faithfulness = FaithfulnesswithHHEM()
+faithfulness = Faithfulness()
 # 4. Kumpulin semua juri dalam satu list
 EVALUATION_METRICS = [
     faithfulness,
@@ -112,7 +112,7 @@ def evaluate_single_turn_rag(message_id: str, question: str, answer: str, contex
         print(f"\n[RAGAS Evaluator] Evaluation Complete:\n{eval_result}\n")
         
         scores_payload = {
-            "faithfulness": sanitize_score(eval_result['faithfulness_with_hhem']),
+            "faithfulness": sanitize_score(eval_result['faithfulness']),
             "answer_relevancy": sanitize_score(eval_result['answer_relevancy']),
             "context_precision": sanitize_score(eval_result['llm_context_precision_without_reference']),
             "context_relevance": sanitize_score(eval_result['nv_context_relevance'])
