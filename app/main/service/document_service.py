@@ -12,6 +12,7 @@ from llama_index.core import PromptTemplate
 from ...main import generation_llm
 import json
 import datetime
+from ..util.document import clean_text
 
 
 def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, original_filename:str, change=False, parser="pymu"):
@@ -61,6 +62,8 @@ def insert_doc(document_id:str, user_id:str, tag:str, collection_name:str, origi
     for doc in splitted_document_data:
         # print('Document', doc)  # Print first 200 characters of the document text
         # print(f"Metadata: {doc.metadata}")
+        doc.text = clean_text(doc.text)
+
         try:
             # Get both dense and sparse embeddings in one call
             print("Document text for embedding:", doc.text)  # Print first 100 characters for debugging
