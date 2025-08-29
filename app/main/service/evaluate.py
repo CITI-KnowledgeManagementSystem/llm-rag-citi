@@ -2,7 +2,6 @@ import asyncio
 
 import json
 from app.main.response import HTTPRequestException
-import torch
 from datasets import Dataset
 from ragas import evaluate
 from ragas.llms import LlamaIndexLLMWrapper
@@ -29,9 +28,6 @@ os.environ["OPIK_WORKSPACE"] = os.getenv('OPIK_WORKSPACE')
 os.environ["OPIK_PROJECT_NAME"] = os.getenv('OPIK_PROJECT_NAME')
 
 
-# ==========================================================
-# ===== SETUP RAGAS - DILAKUKAN SEKALI SAAT APLIKASI START =====
-# ==========================================================
 print("[RAGAS Evaluator] Initialize model for evaluating...")
 
 # 1. Setup LLM untuk RAGAS
@@ -55,12 +51,7 @@ EVALUATION_METRICS = [
 print("✅ [RAGAS Evaluator] Model is ready to use.")
 
 def sanitize_score(ragas_output):
-    """
-    Membersihkan output dari RAGAS.
-    1. Membuka list jika nilainya dibungkus list.
-    2. Mengubah tipe data numpy jadi float biasa.
-    3. Mengubah nilai aneh (nan, inf) jadi None.
-    """
+
     try:
         # Langkah 1: Cek apakah outputnya list, kalo iya, ambil elemen pertamanya
         if isinstance(ragas_output, list) and len(ragas_output) > 0:
@@ -81,13 +72,9 @@ def sanitize_score(ragas_output):
         # Kalo ada error apa pun pas ngebersihin, balikin None aja biar aman
         return None
 
-# ==========================================================
-# ===== FUNGSI EVALUASI UTAMA =====
-# ==========================================================
+
 def evaluate_single_turn_rag(message_id: str, question: str, answer: str, contexts: list):
-    """
-    Fungsi ini menjalankan evaluasi RAGAS untuk satu interaksi tanya-jawab.
-    """
+
     try:
         print(f"[RAGAS Evaluator] Receiving evaluation request for: {question[:50]}...")
 
